@@ -1,0 +1,19 @@
+<html>
+<head>
+<title>Vim Question Question</title>
+</head>
+<body>
+Question:
+{{.Question.Question}}
+<br/>
+Options:
+<ul>
+{{ range .Question.Options }}
+<li>
+  {{ . }}
+</li>
+{{ end }}
+<small>Logged in as {{.User.UserName}}</small>
+</ul>
+</body>
+</html>
