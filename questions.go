@@ -1,4 +1,4 @@
-package datastore
+package main
 
 import (
   "labix.org/v2/mgo"
@@ -25,8 +25,13 @@ func GetRandomQuestion() Question {
   return qdata
 }
 
-func AddQuestion(question Question) error {
-  return qCollection.Insert(&question)
+func AddQuestion(question Question) (error, string) {
+  err := qCollection.Insert(&question)
+  if err == nil {
+    return err, "Question added successfully"
+  }
+  panic(err)
+  return err, "Error in adding question, check Log"
 }
 
 func GetQuestionsCollection(server string, db string) *mgo.Collection {

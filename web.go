@@ -1,91 +1,157 @@
 package main
 
 import (
+  "bytes"
+  "crypto/hmac"
+  "crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
   "os/signal"
-  "./renderer"
-  "./log"
-  "./datastore"
-  "github.com/gorilla/context"
+  "github.com/hoisie/web"
+  "log"
+  "time"
+  "encoding/base64"
+  "strconv"
+  "strings"
 )
 
-type homeData struct {
-  User datastore.User
-}
-
-type questionData struct {
-  User datastore.User
-  Question datastore.Question
-}
-
-type loginData struct {
-  User datastore.User
+type templateData struct {
+  User User
   Info string
 }
 
+type homeData struct {
+  templateData
+}
+
+type questionData struct {
+  templateData
+  Question Question
+}
+
+type loginData struct {
+  templateData
+}
+
+type addQuestionData struct {
+  templateData 
+}
+
+var (
+  logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+)
+
 func main() {
 
-	bind := fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
+  // Configs
+  web.Config.CookieSecret = os.Getenv("COOKIESECRET")
 
   // Handlers
-  http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/quiz/", quizHandler)
-  http.HandleFunc("/login/", loginHandler)
+  web.Get("/", homeHandler)
+	web.Get("/quiz/", quizHandler)
+  web.Get("/login/", loginHandler)
+  web.Post("/login/", loginHandler)
+  web.Get("/addquestion/", addQuestionHandler)
+  web.Post("/addquestion/", addQuestionHandler)
 
-  // Setting up hooks to close db connections
+  // Hooks to close db connections
   c := make(chan os.Signal, 1)
   signal.Notify(c, os.Interrupt)
   go func() {
     for sig := range c {
       fmt.Printf("%+v\n", sig)
-      datastore.CloseOpenSessions()
+      CloseOpenSessions()
       os.Exit(1)
     }
   }()
 
   // Starting webserver
-  log.Info(fmt.Sprintf("listening on %s...", bind))
-	err := http.ListenAndServe(bind, context.ClearHandler(http.DefaultServeMux))
-	if err != nil {
-		panic(err)
-	}
+	location := fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
+  web.Run(location)
 }
 
-func homeHandler(res http.ResponseWriter, req *http.Request) {
-  session := datastore.GetSession("sname", req)
-  user := datastore.GetUserFromId(session.GetLoggedInUserId())
-  renderer.Render("home", homeData{User: user}, res, req)
-  session.Save(res, req)
+func homeHandler(ctx *web.Context) {
+  userid, _ := ctx.GetSecureCookie("userid")
+  user, info := GetUserFromId(userid)
+  logger.Println("userid: " + userid + ", " + fmt.Sprintf("%+v",user))
+  Render("home", homeData{templateData{User: user, Info: info}}, ctx, ctx.Params["refresh"] != "")
 }
 
-func loginHandler(res http.ResponseWriter, req *http.Request) {
-  session := datastore.GetSession("sname", req)
+func loginHandler(ctx *web.Context) {
   loginInfo := ""
-  if req.PostFormValue("username") != "" {
-    user := datastore.User{}
-    user, loginInfo = datastore.LogIn(req.PostFormValue("username"), req.PostFormValue("password"))
-    session.SetLoggedInUser(user)
+  userid := ""
+  if ctx.Params["username"] != "" {
+    user := User{}
+    user, loginInfo = LogIn(ctx.Params["username"], ctx.Params["password"])
+    if loginInfo == "" {
+      setCookie(ctx, "userid", user.UserId, 0)
+      userid = user.UserId
+    }
   }
-  loggedInUser := datastore.GetUserFromId(session.GetLoggedInUserId())
-  renderer.Render("login", loginData{User: loggedInUser, Info: loginInfo}, res, req)
-  session.Save(res, req)
+  if userid == "" {
+    userid, _ = ctx.GetSecureCookie("userid")
+  }
+  logger.Println(fmt.Sprintf("userid got from cookie: %+v", userid))
+  loggedInUser, info := GetUserFromId(userid)
+  Render("login", loginData{templateData{User: loggedInUser, Info: info}}, ctx, ctx.Params["refresh"] != "")
 }
 
-func addQuestionHandler(res http.ResponseWriter, req *http.Request) {
-  err := datastore.AddQuestion(datastore.Question{Question:"How do you move to right?", Options:[]string{"right command", "r key", "left command", "l key"}})
+func addQuestionHandler(ctx *web.Context) {
+  userid, _ := ctx.GetSecureCookie("userid")
+  user, _ := GetUserFromId(userid)
+  var info string
 
-  if err != nil {
-    panic(err)
+  logger.Println("quesiton: " + ctx.Params["question"] + info)
+  if ctx.Params["question"] != "" {
+    logger.Println("inside condition")
+    var err error
+    err, info = AddQuestion(Question{Question: ctx.Params["question"], Options: strings.Split(ctx.Params["options"], ";")})
+
+    logger.Println(info)
+    if err != nil {
+      panic(err)
+    }
   }
 
-  fmt.Fprintf(res, "Done")
+  Render("addquestion", addQuestionData{templateData{User: user, Info: info}}, ctx, ctx.Params["refresh"] != "")
 }
 
-func quizHandler(res http.ResponseWriter, req *http.Request) {
-  session := datastore.GetSession("sname", req)
-  user := datastore.GetUserFromId(session.GetLoggedInUserId())
-  renderer.Render("question", questionData{User: user, Question: datastore.GetRandomQuestion()}, res, req)
-  session.Save(res, req)
+func quizHandler(ctx *web.Context) {
+  userid, _ := ctx.GetSecureCookie("userid")
+  user, info := GetUserFromId(userid)
+  Render("question", questionData{templateData{User: user, Info: info}, GetRandomQuestion()}, ctx, ctx.Params["refresh"] != "")
+}
+
+func setCookie(ctx *web.Context, name string, value string, age int64) {
+  if len(ctx.Server.Config.CookieSecret) == 0 {
+      ctx.Server.Logger.Println("Secret Key for secure cookies has not been set. Please assign a cookie secret to web.Config.CookieSecret.")
+      return
+  }
+  var buf bytes.Buffer
+  encoder := base64.NewEncoder(base64.StdEncoding, &buf)
+  encoder.Write([]byte(value))
+  encoder.Close()
+  vs := buf.String()
+  vb := buf.Bytes()
+  timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+  sig := getCookieSig(ctx.Server.Config.CookieSecret, vb, timestamp)
+  cookie := strings.Join([]string{vs, timestamp, sig}, "|")
+  var expiry time.Time
+  if age == 0 {
+    expiry = time.Unix(2147483647, 0)
+  } else {
+    expiry = time.Unix(time.Now().Unix()+age, 0)
+  }
+  ctx.SetCookie(&http.Cookie{Name: name, Value: cookie, Expires: expiry, Path: "/"})
+}
+
+func getCookieSig(key string, val []byte, timestamp string) string {
+  hm := hmac.New(sha1.New, []byte(key))
+
+  hm.Write(val)
+  hm.Write([]byte(timestamp))
+
+  hex := fmt.Sprintf("%02x", hm.Sum(nil))
+  return hex
 }

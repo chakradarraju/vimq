@@ -1,0 +1,13 @@
+<html>
+<head>
+<title>Vim Quiz - Adding question</title>
+</head>
+<body>
+<small>Logged in as {{.User.UserName}}</small><br/>
+<i>{{.Info}}</i><br/>
+<form action="." method=POST> Question:<input name="question" /><br/>
+Options (separated by semicolon ';'):<input name="options" /><br/>
+<input type="submit" value="Submit" />
+</form>
+</body>
+</html>

@@ -1,9 +1,9 @@
-package datastore
+package main
 
 import (
   "labix.org/v2/mgo"
   "labix.org/v2/mgo/bson"
-  "../log"
+  "strconv"
 )
 
 var (
@@ -18,10 +18,10 @@ type Sequence struct {
 
 func GetConnection(server string) *mgo.Session {
   if openSessions[server] != nil {
-    log.Info("Reusing connection to " + server)
+    logger.Println("Reusing connection to " + server)
     return openSessions[server]
   }
-  log.Info("Opening a new connection to " + server + "...")
+  logger.Println("Opening a new connection to " + server + "...")
   session, err := mgo.Dial(server)
   if err != nil {
     panic(err)
@@ -36,7 +36,7 @@ func GetCollection(session *mgo.Session, db string, collection string) *mgo.Coll
   return session.DB(db).C(collection)
 }
 
-func GetNextId(collection string) int {
+func GetNextId(collection string) string {
   sequence := Sequence{}
   change := mgo.Change {
     Update: bson.M{"$inc": bson.M{"NextId": 1}},
@@ -45,15 +45,15 @@ func GetNextId(collection string) int {
   info, err := sCollection.Find(bson.M{"Counter": collection}).Apply(change, &sequence)
   if err != nil {
     if info != nil {
-      log.Info("something")
+      logger.Println("something")
     }
     panic(err)
   }
-  return sequence.NextId
+  return strconv.Itoa(sequence.NextId)
 }
 
 func CloseOpenSessions() {
-  log.Info("Closing open sessions")
+  logger.Println("Closing open sessions")
   for _, session := range openSessions {
     session.Close()
   }
