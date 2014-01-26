@@ -1,0 +1,48 @@
+{{ define "content" }}
+  <form id="addQuestionForm" action="." method="POST">
+    <textarea name="question" class="form-control" placeholder="Question..." required autofocus></textarea>
+    Options:<br/>
+    <div id="optionsContainer">
+    </div>
+    <button type="button" class="btn btn-default btn-block" id="addOptionBtn">Add option...</button>
+    <button type="submit" class="btn btn-lg btn-primary btn-block">Submit Question</button>
+  </form>
+{{ end }}
+
+{{ define "js" }}
+  <script type="text/javascript">
+    var addQuestionForm = $("#addQuestionForm");
+    var optionsContainer = $("#optionsContainer");
+    $("#addOptionBtn").click(function() {
+      var newOption = createNewOption();
+      optionsContainer.append(newOption);
+      $("input", newOption).focus();
+    });
+
+    function createNewOption() {
+      var option = $("<div class='input-group'><span class='input-group-addon'><input type='radio' name='correctoption' /></span><input type='text' class='form-control' placeholder='Option' /><span class='input-group-btn'><button type='button' tabindex='-1' class='btn btn-warning'>X</button></span></div>")[0];
+      $("button", option).click(function(e) {
+        $(this).parent().parent().remove();
+      });
+      return option;
+    }
+    
+    addQuestionForm.submit(function(e) {
+      addQuestionForm.append($("<input name='options' type='hidden' />").val(getOptions()));
+      addQuestionForm.append($("<input name='correctoptionindex' type='hidden' />").val(getCorrectOptionIndex()));
+    });
+
+    function getOptions() {
+      var options = [];
+      $("input:text", optionsContainer).each(function(index, element) {
+        options.push(element.value);
+      });
+      return options.join(";")
+    }
+
+    function getCorrectOptionIndex() {
+      var radioButtons = $("input:radio", optionsContainer);
+      return radioButtons.index(radioButtons.filter(":checked"));
+    }
+  </script>
+{{ end }}

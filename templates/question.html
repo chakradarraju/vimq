@@ -1,0 +1,18 @@
+{{ define "content" }}
+  <h3> {{ .Question.Question }} </h3>
+  {{ range .Question.Options }}
+  <button type="button" class="btn btn-lg btn-default btn-block answer-button" onclick="checkAnswer(this)">{{ . }}</button>
+  {{ end }}
+{{ end }}
+
+{{ define "js" }}
+  <script type="text/javascript" charset="utf-8">
+    function checkAnswer(optionElement) {
+      $(optionElement).removeClass("btn-default").addClass(
+        optionElement.innerHTML == "{{ .Question.CorrectOption }}"?"btn-success":"btn-warning");
+      $(".answer-button").each(function(index, btn) {
+        btn.disabled = true;
+      });
+    }
+  </script>
+{{ end }}

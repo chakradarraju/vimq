@@ -13,7 +13,7 @@ type Question struct {
   QuestionId string
   Question string
   Options []string
-  CorrectOptionIndex int
+  CorrectOption string
 }
 
 func GetRandomQuestion() Question {
@@ -25,13 +25,13 @@ func GetRandomQuestion() Question {
   return qdata
 }
 
-func AddQuestion(question Question) (error, string) {
+func AddQuestion(question Question) []alert {
   err := qCollection.Insert(&question)
   if err == nil {
-    return err, "Question added successfully"
+    return []alert{alert{Text:"Question added successfully", Type:"info"}}
   }
   panic(err)
-  return err, "Error in adding question, check Log"
+  return []alert{alert{Text:"Error in adding question", Type:"error"}}
 }
 
 func GetQuestionsCollection(server string, db string) *mgo.Collection {

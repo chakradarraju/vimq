@@ -1,0 +1,17 @@
+<div class="header">
+  <ul class="nav nav-pills pull-right">
+    <li><a href="/">Home</a></li>
+    <li><a href="/quiz/">Quiz</a></li>
+    <li>
+    {{ if .templateData.User.UserName }}
+      <a href="/logout/">Logout ({{ .templateData.User.UserName }})</a>
+    {{ else }}
+      <a href="/login/">Login</a>
+    {{ end }}
+    </li>
+  </ul>
+  <h2 class="text-muted">Vim Quiz</h2>
+</div>
+{{ range .Alerts }}
+  <div class="alert alert-{{ .Type }}"> {{ .Text }} </div>
+{{ end }}

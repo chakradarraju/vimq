@@ -42,11 +42,8 @@ func GetNextId(collection string) string {
     Update: bson.M{"$inc": bson.M{"NextId": 1}},
     ReturnNew: true,
   }
-  info, err := sCollection.Find(bson.M{"Counter": collection}).Apply(change, &sequence)
+  _, err := sCollection.Find(bson.M{"Counter": collection}).Apply(change, &sequence)
   if err != nil {
-    if info != nil {
-      logger.Println("something")
-    }
     panic(err)
   }
   return strconv.Itoa(sequence.NextId)

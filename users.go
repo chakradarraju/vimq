@@ -3,7 +3,6 @@ package main
 import (
   "labix.org/v2/mgo"
   "labix.org/v2/mgo/bson"
-  "fmt"
 )
 
 type User struct {
@@ -17,7 +16,7 @@ var (
   uCollection *mgo.Collection = GetUsersCollection("localhost", "vquiz")
 )
 
-func GetUserFromId(userid string) (User, string) {
+func GetUserFromId(userid string) (User, []alert) {
   user := User{}
   if userid != "" {
     users := []User{}
@@ -27,10 +26,11 @@ func GetUserFromId(userid string) (User, string) {
     }
     user, info := getUserOrError(users)
     if info == "" {
-      return user, info
+      return user, []alert{}
     }
+    return user, []alert{alert{Text:info, Type:"error"}}
   }
-  return user, ""
+  return user, []alert{}
 }
 
 func getUserOrError(users []User) (User, string) {
@@ -46,8 +46,6 @@ func getUserOrError(users []User) (User, string) {
 func LogIn(username string, password string) (User, string) {
   users := []User{}
   err := uCollection.Find(bson.M{"username": username}).All(&users)
-  logger.Println("Username: " + username + ", password: " + password)
-  logger.Println(fmt.Sprintf("%+v",users))
   if err != nil {
     panic(err)
   }

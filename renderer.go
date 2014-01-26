@@ -19,7 +19,7 @@ func Render(page string, data interface{}, res http.ResponseWriter, refresh bool
 
 func parseTemplate(file string) *template.Template {
   logger.Println("Parsing " + file + "...")
-  t, err := template.ParseFiles("tmpls/" + file + ".html")
+  t, err := template.ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")
   if err != nil {
     panic(err)
   }

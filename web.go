@@ -16,9 +16,15 @@ import (
   "strings"
 )
 
+type alert struct {
+  Text string
+  Type string
+}
+
 type templateData struct {
   User User
-  Info string
+  Alerts []alert
+  PageTitle string
 }
 
 type homeData struct {
@@ -26,8 +32,8 @@ type homeData struct {
 }
 
 type questionData struct {
-  templateData
   Question Question
+  templateData
 }
 
 type loginData struct {
@@ -51,7 +57,8 @@ func main() {
   web.Get("/", homeHandler)
 	web.Get("/quiz/", quizHandler)
   web.Get("/login/", loginHandler)
-  web.Post("/login/", loginHandler)
+  web.Post("/login/", loginSubmitHandler)
+  web.Get("/logout/", logoutHandler)
   web.Get("/addquestion/", addQuestionHandler)
   web.Post("/addquestion/", addQuestionHandler)
 
@@ -73,54 +80,53 @@ func main() {
 
 func homeHandler(ctx *web.Context) {
   userid, _ := ctx.GetSecureCookie("userid")
-  user, info := GetUserFromId(userid)
-  logger.Println("userid: " + userid + ", " + fmt.Sprintf("%+v",user))
-  Render("home", homeData{templateData{User: user, Info: info}}, ctx, ctx.Params["refresh"] != "")
+  user, alerts := GetUserFromId(userid)
+  Render("home", homeData{templateData{PageTitle: "VQuiz - Home", User: user, Alerts: alerts}}, ctx, ctx.Params["refresh"] != "")
 }
 
 func loginHandler(ctx *web.Context) {
-  loginInfo := ""
-  userid := ""
-  if ctx.Params["username"] != "" {
-    user := User{}
-    user, loginInfo = LogIn(ctx.Params["username"], ctx.Params["password"])
-    if loginInfo == "" {
-      setCookie(ctx, "userid", user.UserId, 0)
-      userid = user.UserId
-    }
+  userid, _ := ctx.GetSecureCookie("userid")
+  loggedInUser, alerts := GetUserFromId(userid)
+  Render("login", loginData{templateData{PageTitle: "VQuiz - Login", User: loggedInUser, Alerts: alerts}}, ctx, ctx.Params["refresh"] != "")
+}
+
+func loginSubmitHandler(ctx *web.Context) {
+  user, loginInfo := LogIn(ctx.Params["username"], ctx.Params["password"])
+  if loginInfo == "" {
+    setCookie(ctx, "userid", user.UserId, 0)
   }
-  if userid == "" {
-    userid, _ = ctx.GetSecureCookie("userid")
-  }
-  logger.Println(fmt.Sprintf("userid got from cookie: %+v", userid))
-  loggedInUser, info := GetUserFromId(userid)
-  Render("login", loginData{templateData{User: loggedInUser, Info: info}}, ctx, ctx.Params["refresh"] != "")
+  ctx.Redirect(301, "/")
+}
+
+func logoutHandler(ctx *web.Context) {
+  setCookie(ctx, "userid", "", -1) // Deleting cookie
+  ctx.Redirect(301, "/")
 }
 
 func addQuestionHandler(ctx *web.Context) {
   userid, _ := ctx.GetSecureCookie("userid")
-  user, _ := GetUserFromId(userid)
-  var info string
+  user, alerts := GetUserFromId(userid)
 
-  logger.Println("quesiton: " + ctx.Params["question"] + info)
   if ctx.Params["question"] != "" {
-    logger.Println("inside condition")
     var err error
-    err, info = AddQuestion(Question{Question: ctx.Params["question"], Options: strings.Split(ctx.Params["options"], ";")})
-
-    logger.Println(info)
+    options := strings.Split(ctx.Params["options"], ";")
+    correctoptionindex, err := strconv.Atoi(ctx.Params["correctoptionindex"])
     if err != nil {
-      panic(err)
+      alerts = append(alerts, alert{Text:"Problem finding correct option", Type: "error"})
+    } else {
+      correctoption := options[correctoptionindex]
+      alerts = append(alerts, AddQuestion(Question{Question: ctx.Params["question"], Options: options, CorrectOption: correctoption})...)
     }
   }
 
-  Render("addquestion", addQuestionData{templateData{User: user, Info: info}}, ctx, ctx.Params["refresh"] != "")
+  Render("addquestion", addQuestionData{templateData{PageTitle: "VQuiz - Add Question", User: user, Alerts: alerts}}, ctx, ctx.Params["refresh"] != "")
 }
 
 func quizHandler(ctx *web.Context) {
   userid, _ := ctx.GetSecureCookie("userid")
-  user, info := GetUserFromId(userid)
-  Render("question", questionData{templateData{User: user, Info: info}, GetRandomQuestion()}, ctx, ctx.Params["refresh"] != "")
+  user, alerts := GetUserFromId(userid)
+  qdata := questionData{templateData:templateData{PageTitle: "VQuiz", User: user, Alerts: alerts}, Question:GetRandomQuestion()}
+  Render("question", qdata, ctx, ctx.Params["refresh"] != "")
 }
 
 func setCookie(ctx *web.Context, name string, value string, age int64) {
