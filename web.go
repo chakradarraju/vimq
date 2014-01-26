@@ -51,7 +51,7 @@ var (
 func main() {
 
   // Configs
-  web.Config.CookieSecret = os.Getenv("COOKIESECRET")
+  web.Config.CookieSecret = getenv("COOKIESECRET")
 
   // Handlers
   web.Get("/", homeHandler)
@@ -74,8 +74,12 @@ func main() {
   }()
 
   // Starting webserver
-	location := fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
+	location := fmt.Sprintf("%s:%s", getenv("HOST"), getenv("PORT"))
   web.Run(location)
+}
+
+func getenv(env string) string {
+  return os.Getenv(env)
 }
 
 func homeHandler(ctx *web.Context) {

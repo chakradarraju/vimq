@@ -3,15 +3,27 @@
   <head>
     <title>{{ .PageTitle }}</title>
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      .container {
+        max-width: 730px;
+      }
+    </style>
+    {{ if isTemplateDefined "css" }}
+      {{ template "css" . }}
+    {{ end }}
   </head>
   <body>
     <div class="container">
       {{ template "header.html" . }}
 
-      {{ template "content" . }}
+        {{ if isTemplateDefined "content" }}
+          {{ template "content" . }}
+        {{ end }}
     </div>
     <script type="text/javascript" src="/js/lib/jquery.min.js"></script>
     <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-    {{ template "js" . }}
+      {{ if isTemplateDefined "js" }}
+        {{ template "js" . }}
+      {{ end }}
   </body>
 </html>

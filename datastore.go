@@ -8,7 +8,7 @@ import (
 
 var (
   openSessions = map[string]*mgo.Session{}
-  sCollection = GetCollection(GetConnection("localhost"), "vquiz", "sequence")
+  sCollection = GetCollection(GetConnection(getenv("OPENSHIFT_MONGODB_DB_HOST")+":"+getenv("OPENSHIFT_MONGODB_DB_PORT")), getenv("DB"), "sequence")
 )
 
 type Sequence struct {

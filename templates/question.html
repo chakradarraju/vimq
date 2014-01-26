@@ -1,8 +1,10 @@
 {{ define "content" }}
   <h3> {{ .Question.Question }} </h3>
-  {{ range .Question.Options }}
-  <button type="button" class="btn btn-lg btn-default btn-block answer-button" onclick="checkAnswer(this)">{{ . }}</button>
-  {{ end }}
+  <div class="btn-group-vertical">
+    {{ range .Question.Options }}
+    <button type="button" class="btn btn-default answer-button" onclick="checkAnswer(this)">{{ . }}</button>
+    {{ end }}
+  </div>
 {{ end }}
 
 {{ define "js" }}
@@ -15,4 +17,12 @@
       });
     }
   </script>
+{{ end }}
+
+{{ define "css" }}
+  <style>
+    .btn-group-vertical > .answer-button {
+      width: 300px;
+    }
+  </style>
 {{ end }}
