@@ -39,10 +39,10 @@ func GetCollection(session *mgo.Session, db string, collection string) *mgo.Coll
 func GetNextId(collection string) string {
   sequence := Sequence{}
   change := mgo.Change {
-    Update: bson.M{"$inc": bson.M{"NextId": 1}},
+    Update: bson.M{"$inc": bson.M{"nextid": 1}},
     ReturnNew: true,
   }
-  _, err := sCollection.Find(bson.M{"Counter": collection}).Apply(change, &sequence)
+  _, err := sCollection.Find(bson.M{"counter": collection}).Apply(change, &sequence)
   if err != nil {
     panic(err)
   }

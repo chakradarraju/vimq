@@ -19,14 +19,12 @@ func Render(page string, data interface{}, res http.ResponseWriter, refresh bool
 
 func parseTemplate(file string) *template.Template {
   logger.Println("Parsing " + file + "...")
-  var err error
-  t := template.New("base.html")
   myfuncs := template.FuncMap{
-    "isTemplateDefined": func(name string) bool {
-      return t.Lookup(name) != nil
+    "canAddQuestion": func(user User) bool {
+      return user.UserLevel != "" && user.UserLevel != "rookie"
     },
   }
-  t, err = t.Funcs(myfuncs).ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")
+  t, err := template.New("base.html").Funcs(myfuncs).ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")
   if err != nil {
     panic(err)
   }

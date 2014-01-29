@@ -10,6 +10,7 @@ type User struct {
   UserName string
   PassWord string
   UserLevel string
+  EmailId string
 }
 
 var (
@@ -25,43 +26,55 @@ func GetUserFromId(userid string) (User, []alert) {
       panic(err)
     }
     user, info := getUserOrError(users)
-    if info == "" {
+    if len(info) == 0 {
       return user, []alert{}
     }
-    return user, []alert{alert{Text:info, Type:"error"}}
+    return user, info
   }
   return user, []alert{}
 }
 
-func getUserOrError(users []User) (User, string) {
+func getUserOrError(users []User) (User, []alert) {
   if len(users) == 0 {
-    return User{}, "User not found"
+    return User{}, []alert{alert{Text:"User not found", Type:"danger"}}
   }
   if len(users) > 1 {
-    return User{}, "More than one user found"
+    return User{}, []alert{alert{Text:"More than one user found", Type:"danger"}}
   }
-  return users[0], ""
+  return users[0], []alert{}
 }
 
-func LogIn(username string, password string) (User, string) {
+func LogIn(username string, password string) (User, []alert) {
+  user, alerts := GetUser(username)
+  if len(alerts) > 0 {
+    return user, alerts
+  }
+  if user.PassWord == password {
+    return user, []alert{}
+  }
+  return User{}, []alert{alert{Text:"User password incorrect", Type:"danger"}}
+}
+
+func GetUser(username string) (User, []alert) {
   users := []User{}
   err := uCollection.Find(bson.M{"username": username}).All(&users)
   if err != nil {
     panic(err)
   }
-  user, info := getUserOrError(users)
-  if info != "" {
-    return user, info
+  user, error := getUserOrError(users)
+  if len(error) > 0 {
+    return user, error
   }
-  if user.PassWord == password {
-    return user, ""
-  }
-  return User{}, "User password incorrect" + user.PassWord + "2" + password + "1" + user.UserName + "3" + user.UserId
+  return user, []alert{}
 }
 
-func SignUp(username string, password string) error {
-  user := User{UserId: GetNextId("user"), UserName: username, PassWord: password}
-  return uCollection.Insert(&user)
+func SignUp(username string, password string, email string) (User, []alert) {
+user := User{UserId: GetNextId("user"), UserName: username, PassWord: password, EmailId: email, UserLevel: "rookie"}
+  err := uCollection.Insert(&user)
+  if err != nil {
+    panic(err)
+  }
+  return GetUser(username)
 }
 
 func GetUsersCollection(server string, db string) *mgo.Collection {

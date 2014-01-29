@@ -1,0 +1,16 @@
+{{ define "content" }}
+<div class="row">
+  <div class="col-md-3"></div>
+  <div class="col-md-6">
+    <form class="form-signin" role="form" action="." method="POST">
+      <input name="username" class="form-control" placeholder="Username" required autofocus />
+      <input name="password" type="password" class="form-control" placeholder="Password" required />
+      <input type="password" class="form-control" placeholder="Confirm password" required />
+      <input name="email" class="form-control" placeholder="Emailid" required />
+      <button type="submit" class="btn btn-lg btn-primary btn-block">Sign Up</button>
+    </form>
+  </div>
+</div>
+{{ end }}
+
+{{ define "pagetitle" }} VimQ - SignUp {{ end }}

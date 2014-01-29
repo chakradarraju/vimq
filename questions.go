@@ -31,7 +31,7 @@ func AddQuestion(question Question) []alert {
     return []alert{alert{Text:"Question added successfully", Type:"info"}}
   }
   panic(err)
-  return []alert{alert{Text:"Error in adding question", Type:"error"}}
+  return []alert{alert{Text:"Error in adding question", Type:"danger"}}
 }
 
 func GetQuestionsCollection(server string, db string) *mgo.Collection {

@@ -2,13 +2,17 @@
   <ul class="nav nav-pills pull-right">
     <li><a href="/">Home</a></li>
     <li><a href="/quiz/">Quiz</a></li>
+    {{ if canAddQuestion .User }}
+      <li><a href="/addquestion/">Add question</a></li>
+    {{ end }}
     <li>
-    {{ if .templateData.User.UserName }}
-      <a href="/logout/">Logout ({{ .templateData.User.UserName }})</a>
+    {{ if .User.UserName }}
+      <a href="/logout/">Logout ({{ .User.UserName }})</a>
     {{ else }}
       <a href="/login/">Login</a>
     {{ end }}
     </li>
+    <li>
   </ul>
   <h2 class="text-muted">Vim Quiz</h2>
 </div>

@@ -6,15 +6,10 @@
       <input name="username" class="form-control" placeholder="Username" required autofocus />
       <input type="password" name="password" class="form-control" placeholder="Password" required />
       <button type="submit" class="btn btn-lg btn-primary btn-block">Login</button>
+      <a href="/signup/" class="btn btn-lg btn-success btn-block">Sign up</a>
     </form>
   </div>
 </div>
 {{ end }}
 
-{{ define "js" }}
-  <script type="text/javascript" charset="utf-8">
-    $("#loginForm").submit(function(e) { 
-      if($("#username").val() == "") alert("Username can't be empty");
-    });
-  </script>
-{{ end }}
+{{ define "pagetitle" }} VimQ - Login {{ end }}

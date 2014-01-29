@@ -1,29 +1,33 @@
+{{ define "pagetitle" }} {{ end }}
+{{ define "css" }} {{ end }}
+{{ define "content" }} {{ end }}
+{{ define "js" }} {{ end }}
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{{ .PageTitle }}</title>
+    <title>
+    {{ if .PageTitle }}
+      {{ .PageTitle }}
+    {{ else }}
+      {{ template "pagetitle" . }}
+    {{ end }} 
+    </title>
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <style>
       .container {
         max-width: 730px;
       }
     </style>
-    {{ if isTemplateDefined "css" }}
-      {{ template "css" . }}
-    {{ end }}
+    {{ template "css" . }}
   </head>
   <body>
     <div class="container">
       {{ template "header.html" . }}
 
-        {{ if isTemplateDefined "content" }}
-          {{ template "content" . }}
-        {{ end }}
+      {{ template "content" . }}
     </div>
     <script type="text/javascript" src="/js/lib/jquery.min.js"></script>
     <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-      {{ if isTemplateDefined "js" }}
-        {{ template "js" . }}
-      {{ end }}
+    {{ template "js" . }}
   </body>
 </html>
