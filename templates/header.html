@@ -1,20 +1,27 @@
-<div class="header">
+<div class="header" style="margin-bottom: 30px; border-bottom: 1px solid #e5e5e5; padding-bottom: 15px;">
   <ul class="nav nav-pills pull-right">
-    <li{{ addClassIfActive "home" .Context }}><a href="/home/">Home</a></li>
-    <li{{ addClassIfActive "quiz" .Context }}><a href="/quiz/">Quiz</a></li>
+    <li class="{{ addActiveIfNeeded .Context "home" }}"><a href="/home/">Home</a></li>
+    <li class="{{ addActiveIfNeeded .Context "quiz" }}"><a href="/quiz/">Quiz</a></li>
     {{ if canAddQuestion .User }}
-      <li{{ addClassIfActive "addquestion" .Context }}><a href="/addquestion/">Add question</a></li>
+      <li class="{{ addActiveIfNeeded .Context "addquestion" }}"><a href="/addquestion/">Add question</a></li>
     {{ end }}
-    <li{{ addClassIfActive "login" .Context }}>
     {{ if .User.UserName }}
-      <a href="/logout/">Logout ({{ .User.UserName }})</a>
+      <li class="dropdown {{ addActiveIfNeeded .Context "myprofile" }}">
+        <a href="/myprofile/" class="dropdown-toggle" data-toggle="dropdown">{{ .User.UserName }} <b class="caret"></b></a>
+        <ul class="dropdown-menu pull-right">
+          <li><a href="/myprofile/">My Profile</a></li>
+          <li><a href="/logout/">Logout</a></li>
+        </ul>
+      </li>
     {{ else }}
-      <a href="/login/">Login</a>
+      <li class="{{ addActiveIfNeeded .Context "login" }}">
+        <a href="/login/">Login</a>
+      </li>
     {{ end }}
     </li>
     <li>
   </ul>
-  <h2 class="text-muted">Vim Quiz</h2>
+  <h2 class="text-muted">VimQ</h2>
 </div>
 {{ range .Alerts }}
   <div class="alert alert-{{ .Type }}"> {{ .Text }} </div>

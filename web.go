@@ -45,6 +45,11 @@ type addQuestionData struct {
   templateData 
 }
 
+type profileData struct {
+  templateData
+  Profile User
+}
+
 var (
   logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 )
@@ -60,6 +65,8 @@ func main() {
   web.Get("/login/", simplePageHandler("login"))
   web.Get("/signup/", simplePageHandler("signup"))
   web.Get("/addquestion/", simplePageHandler("addquestion"))
+  web.Get("/myprofile/", profileHandler)
+  web.Get("/profile/(.*)", profileHandler)
 
 	web.Get("/quiz/", quizHandler)
 
@@ -93,18 +100,37 @@ func getenv(env string) string {
   return os.Getenv(env)
 }
 
+func getLoggedInUser(ctx *web.Context) (User, []alert) {
+  userid, _ := ctx.GetSecureCookie("userid")
+  if userid == "" {
+    return User{}, []alert{}
+  }
+  return GetUserFromId(userid)
+}
+
 func simplePageHandler(page string) func(*web.Context, ...alert) {
   return func(ctx *web.Context, alerts ...alert) {
-    userid, _ := ctx.GetSecureCookie("userid")
-    user, userAlerts := GetUserFromId(userid)
+    user, userAlerts := getLoggedInUser(ctx)
     alerts = append(alerts, userAlerts...)
     Render(page, templateData{User: user, Alerts: alerts, Context: ctx}, ctx, ctx.Params["refresh"] != "")
   }
 }
 
+func profileHandler(ctx *web.Context, users ...string) {
+  loggedInUser, alerts := getLoggedInUser(ctx)
+  var user User
+  if len(users) == 0 {
+    user = loggedInUser
+  } else {
+    var userAlerts []alert
+    user, userAlerts = GetUserFromUserName(users[0])
+    alerts = append(alerts, userAlerts...)
+  }
+  Render("profile", profileData{templateData:templateData{User: loggedInUser, Alerts:alerts, Context: ctx}, Profile: user}, ctx, ctx.Params["refresh"] != "")
+}
+
 func quizHandler(ctx *web.Context, alerts ...alert) {
-  userid, _ := ctx.GetSecureCookie("userid")
-  user, userAlerts := GetUserFromId(userid)
+  user, userAlerts := getLoggedInUser(ctx)
   alerts = append(alerts, userAlerts...)
   Render("quiz", questionData{templateData:templateData{User: user, Alerts: alerts, Context: ctx}, Question:GetRandomQuestion()}, ctx, ctx.Params["refresh"] != "")
 }

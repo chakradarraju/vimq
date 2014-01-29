@@ -17,21 +17,21 @@ var (
   uCollection *mgo.Collection = GetUsersCollection(getenv("DB"))
 )
 
-func GetUserFromId(userid string) (User, []alert) {
-  user := User{}
-  if userid != "" {
-    users := []User{}
-    err := uCollection.Find(bson.M{"userid": userid}).All(&users)
-    if err != nil {
-      panic(err)
-    }
-    user, info := getUserOrError(users)
-    if len(info) == 0 {
-      return user, []alert{}
-    }
-    return user, info
+func GetUserFromBson(query bson.M) (User, []alert) {
+  users := []User{}
+  err := uCollection.Find(query).All(&users)
+  if err != nil {
+    panic(err)
   }
-  return user, []alert{}
+  return getUserOrError(users)
+}
+
+func GetUserFromUserName(username string) (User, []alert) {
+  return GetUserFromBson(bson.M{"username":username})
+}
+
+func GetUserFromId(userid string) (User, []alert) {
+  return GetUserFromBson(bson.M{"userid":userid})
 }
 
 func getUserOrError(users []User) (User, []alert) {

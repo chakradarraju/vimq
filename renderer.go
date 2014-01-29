@@ -4,6 +4,7 @@ import (
   "net/http"
   "html/template"
   "github.com/hoisie/web"
+  "strings"
 )
 
 var (
@@ -24,11 +25,13 @@ func parseTemplate(file string) *template.Template {
     "canAddQuestion": func(user User) bool {
       return user.UserLevel != "" && user.UserLevel != "rookie"
     },
-    "addClassIfActive": func(tab string, ctx *web.Context) template.HTMLAttr {
-      if isActiveTab("/"+tab, ctx) {
-        return template.HTMLAttr(" class='active'")
+    "addActiveIfNeeded": func(ctx *web.Context, bases ...string) string {
+      for _, base := range bases {
+        if strings.Index(ctx.Request.URL.Path, base) == 1 {
+          return "active"
+        }
       }
-      return template.HTMLAttr("")
+      return ""
     },
   }
   t, err := template.New("base.html").Funcs(myfuncs).ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")

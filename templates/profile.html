@@ -1,0 +1,27 @@
+{{ define "pagetitle" }} VimQ user - {{ .Profile.UserName }} {{ end }}
+
+{{ define "content" }}
+<div class="row">
+  <div class="col-md-4">Profile pic (Coming soon...)</div>
+  <div class="col-md-8">
+    {{ if .Profile.UserName }}
+    <div class="row">
+      <div class="col-md-4 lead text-right">Username:</div>
+      <div class="col-md-8 lead">{{ .Profile.UserName }}</div>
+    </div>
+    {{ end }}
+    {{ if .Profile.UserLevel }}
+    <div class="row">
+      <div class="col-md-4 lead text-right">User level:</div>
+      <div class="col-md-8 lead">{{ .Profile.UserLevel }}</div>
+    </div>
+    {{ end }}
+    {{ if .Profile.EmailId }}
+    <div class="row">
+      <div class="col-md-4 lead text-right">Email-id:</div>
+      <div class="col-md-8 lead">{{ .Profile.EmailId }}</div>
+    </div>
+    {{ end }}
+  </div>
+</div>
+{{ end }}
