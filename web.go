@@ -55,10 +55,11 @@ func main() {
 
   // Handlers
   web.Get("/", simplePageHandler("home"))
-	web.Get("/quiz/", simplePageHandler("quiz"))
   web.Get("/login/", simplePageHandler("login"))
   web.Get("/signup/", simplePageHandler("signup"))
   web.Get("/addquestion/", simplePageHandler("addquestion"))
+
+	web.Get("/quiz/", quizHandler)
 
   web.Get("/logout/", logoutHandler)
 
@@ -95,6 +96,12 @@ func simplePageHandler(page string) func(*web.Context, ...alert) {
   }
 }
 
+func quizHandler(ctx *web.Context, alerts ...alert) {
+  userid, _ := ctx.GetSecureCookie("userid")
+  user, userAlerts := GetUserFromId(userid)
+  alerts = append(alerts, userAlerts...)
+  Render("quiz", questionData{templateData:templateData{User: user, Alerts: alerts}, Question:GetRandomQuestion()}, ctx, ctx.Params["refresh"] != "")
+}
 func loginSubmitHandler(ctx *web.Context) {
   user, alerts := LogIn(ctx.Params["username"], ctx.Params["password"])
   if len(alerts) > 0 {
