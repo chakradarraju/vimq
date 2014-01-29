@@ -6,7 +6,7 @@ import (
 )
 
 var (
-  qCollection *mgo.Collection = GetQuestionsCollection("localhost", "vquiz")
+  qCollection *mgo.Collection = GetQuestionsCollection(getenv("DB"))
 )
 
 type Question struct {
@@ -34,6 +34,6 @@ func AddQuestion(question Question) []alert {
   return []alert{alert{Text:"Error in adding question", Type:"danger"}}
 }
 
-func GetQuestionsCollection(server string, db string) *mgo.Collection {
-  return GetCollection(GetConnection(server), db, "questions")
+func GetQuestionsCollection(db string) *mgo.Collection {
+  return GetCollection(GetMgoConnection(), db, "questions")
 }

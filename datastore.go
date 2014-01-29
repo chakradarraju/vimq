@@ -8,12 +8,16 @@ import (
 
 var (
   openSessions = map[string]*mgo.Session{}
-  sCollection = GetCollection(GetConnection(getenv("OPENSHIFT_MONGODB_DB_HOST")+":"+getenv("OPENSHIFT_MONGODB_DB_PORT")), getenv("DB"), "sequence")
+  sCollection = GetCollection(GetMgoConnection(), getenv("DB"), "sequence")
 )
 
 type Sequence struct {
   Counter string
   NextId int
+}
+
+func GetMgoConnection() *mgo.Session {
+  return GetConnection(getenv("OPENSHIFT_MONGODB_DB_HOST")+":"+getenv("OPENSHIFT_MONGODB_DB_PORT"))
 }
 
 func GetConnection(server string) *mgo.Session {

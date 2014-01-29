@@ -14,7 +14,7 @@ type User struct {
 }
 
 var (
-  uCollection *mgo.Collection = GetUsersCollection("localhost", "vquiz")
+  uCollection *mgo.Collection = GetUsersCollection(getenv("DB"))
 )
 
 func GetUserFromId(userid string) (User, []alert) {
@@ -77,6 +77,6 @@ user := User{UserId: GetNextId("user"), UserName: username, PassWord: password, 
   return GetUser(username)
 }
 
-func GetUsersCollection(server string, db string) *mgo.Collection {
-  return GetCollection(GetConnection(server), db, "users")
+func GetUsersCollection(db string) *mgo.Collection {
+  return GetCollection(GetMgoConnection(), db, "users")
 }
