@@ -3,6 +3,7 @@ package main
 import (
   "net/http"
   "html/template"
+  "github.com/hoisie/web"
 )
 
 var (
@@ -22,6 +23,12 @@ func parseTemplate(file string) *template.Template {
   myfuncs := template.FuncMap{
     "canAddQuestion": func(user User) bool {
       return user.UserLevel != "" && user.UserLevel != "rookie"
+    },
+    "addClassIfActive": func(tab string, ctx *web.Context) template.HTMLAttr {
+      if isActiveTab("/"+tab, ctx) {
+        return template.HTMLAttr(" class='active'")
+      }
+      return template.HTMLAttr("")
     },
   }
   t, err := template.New("base.html").Funcs(myfuncs).ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")

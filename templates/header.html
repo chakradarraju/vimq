@@ -1,11 +1,11 @@
 <div class="header">
   <ul class="nav nav-pills pull-right">
-    <li><a href="/">Home</a></li>
-    <li><a href="/quiz/">Quiz</a></li>
+    <li{{ addClassIfActive "home" .Context }}><a href="/home/">Home</a></li>
+    <li{{ addClassIfActive "quiz" .Context }}><a href="/quiz/">Quiz</a></li>
     {{ if canAddQuestion .User }}
-      <li><a href="/addquestion/">Add question</a></li>
+      <li{{ addClassIfActive "addquestion" .Context }}><a href="/addquestion/">Add question</a></li>
     {{ end }}
-    <li>
+    <li{{ addClassIfActive "login" .Context }}>
     {{ if .User.UserName }}
       <a href="/logout/">Logout ({{ .User.UserName }})</a>
     {{ else }}

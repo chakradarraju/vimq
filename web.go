@@ -25,6 +25,7 @@ type templateData struct {
   User User
   Alerts []alert
   PageTitle string
+  Context *web.Context
 }
 
 type homeData struct {
@@ -54,7 +55,8 @@ func main() {
   web.Config.CookieSecret = getenv("COOKIESECRET")
 
   // Handlers
-  web.Get("/", simplePageHandler("home"))
+  web.Get("/", func(ctx *web.Context) { ctx.Redirect(301, "/home/") })
+  web.Get("/home/", simplePageHandler("home"))
   web.Get("/login/", simplePageHandler("login"))
   web.Get("/signup/", simplePageHandler("signup"))
   web.Get("/addquestion/", simplePageHandler("addquestion"))
@@ -83,6 +85,10 @@ func main() {
   web.Run(location)
 }
 
+func isActiveTab(base string, ctx *web.Context) bool {
+  return strings.Index(ctx.Request.URL.Path, base) == 0
+}
+
 func getenv(env string) string {
   return os.Getenv(env)
 }
@@ -92,7 +98,7 @@ func simplePageHandler(page string) func(*web.Context, ...alert) {
     userid, _ := ctx.GetSecureCookie("userid")
     user, userAlerts := GetUserFromId(userid)
     alerts = append(alerts, userAlerts...)
-    Render(page, templateData{User: user, Alerts: alerts}, ctx, ctx.Params["refresh"] != "")
+    Render(page, templateData{User: user, Alerts: alerts, Context: ctx}, ctx, ctx.Params["refresh"] != "")
   }
 }
 
@@ -100,7 +106,7 @@ func quizHandler(ctx *web.Context, alerts ...alert) {
   userid, _ := ctx.GetSecureCookie("userid")
   user, userAlerts := GetUserFromId(userid)
   alerts = append(alerts, userAlerts...)
-  Render("quiz", questionData{templateData:templateData{User: user, Alerts: alerts}, Question:GetRandomQuestion()}, ctx, ctx.Params["refresh"] != "")
+  Render("quiz", questionData{templateData:templateData{User: user, Alerts: alerts, Context: ctx}, Question:GetRandomQuestion()}, ctx, ctx.Params["refresh"] != "")
 }
 func loginSubmitHandler(ctx *web.Context) {
   user, alerts := LogIn(ctx.Params["username"], ctx.Params["password"])
@@ -109,12 +115,12 @@ func loginSubmitHandler(ctx *web.Context) {
     return
   }
   setCookie(ctx, "userid", user.UserId, 0)
-  ctx.Redirect(301, "/")
+  ctx.Redirect(301, "/home/")
 }
 
 func logoutHandler(ctx *web.Context) {
   setCookie(ctx, "userid", "", -1) // Deleting cookie
-  ctx.Redirect(301, "/")
+  ctx.Redirect(301, "/home/")
 }
 
 func signupSubmitHandler(ctx *web.Context) {
@@ -124,7 +130,7 @@ func signupSubmitHandler(ctx *web.Context) {
     return
   }
   setCookie(ctx, "userid", user.UserId, 0)
-  ctx.Redirect(301, "/")
+  ctx.Redirect(301, "/home/")
 }
 
 func addQuestionSubmitHandler(ctx *web.Context) {
