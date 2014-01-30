@@ -1,5 +1,5 @@
 {{ define "content" }}
-  <h3> {{ .Question.Question }} </h3>
+  <span> {{ .Question.Question }} </span><br/>
   <div class="btn-group-vertical">
     {{ range .Question.Options }}
     <button type="button" class="btn btn-default answer-button" onclick="checkAnswer(this)">{{ . }}</button>

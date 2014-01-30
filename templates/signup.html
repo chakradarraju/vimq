@@ -1,11 +1,16 @@
+{{ define "pagetitle" }} VimQ - SignUp {{ end }}
+
 {{ define "content" }}
+<div id="message">
+</div>
 <div class="row">
-  <div class="col-md-3"></div>
-  <div class="col-md-6">
-    <form class="form-signin" role="form" action="." method="POST">
+  <div class="col-md-4"></div>
+  <div class="col-md-4">
+    <form id="signupform" class="form-signin" role="form" action="." method="POST">
       <input name="username" class="form-control" placeholder="Username" required autofocus />
+      <input name="displayname" class="form-control" placeholder="Display Name" required />
       <input name="password" type="password" class="form-control" placeholder="Password" required />
-      <input type="password" class="form-control" placeholder="Confirm password" required />
+      <input type="password" id="confirmpassword" class="form-control" placeholder="Confirm password" required />
       <input name="email" class="form-control" placeholder="Emailid" required />
       <button type="submit" class="btn btn-lg btn-primary btn-block">Sign Up</button>
     </form>
@@ -13,4 +18,64 @@
 </div>
 {{ end }}
 
-{{ define "pagetitle" }} VimQ - SignUp {{ end }}
+{{ define "js" }}
+<script type="text/javascript" charset="utf-8">
+  window.onerror = function() {
+    alert("An client side error occured");
+  }
+
+  var usernameRe = /^[A-Za-z0-9]{6,32}$/,
+      validUsernameMessage = "A valid username should be atleast 6, atmost 32 characters and should contain only alphabets and numbers (no special characters)",
+      displaynameRe = /^.{6,64}$/,
+      validDisplaynameMessage = "A valid display name should be atleast 6, atmost 64 characters",
+      passwordRe = /^.{4,32}$/,
+      validPasswordMessage = "A valid password should be atleast 4, atmost 32 characters",
+      emailRe = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
+
+  $("#signupform").submit(function(e) {
+    var username = $("[name='username']", this),
+        displayname = $("[name='displayname']", this),
+        password = $("[name='password']", this),
+        confirmpassword = $("#confirmpassword", this),
+        email = $("[name='email']", this);
+        
+    if (!usernameRe.test(username.val())) {
+      showError("Username you entered is invalid. " + validUsernameMessage);
+      username.focus();
+      return false;
+    }
+
+    if (!displaynameRe.test(displayname.val())) {
+      showError("Display name you entered has " + displayname.val().length + " characters. " + validDisplaynameMessage);
+      displayname.focus();
+      return false;
+    }
+
+    if (password.val() != confirmpassword.val()) {
+      showError("Passwords mismatch, please type same password in confirm password box.");
+      password.val("").focus();
+      confirmpassword.val("");
+      return false;
+    }
+
+    if (!passwordRe.test(password.val())) {
+      showError("Password you entered is invalid. " + validPasswordMessage);
+      password.val("").focus();
+      confirmpassword.val("");
+      return false;
+    }
+
+    if (!emailRe.test(email.val())) {
+      showError("Please check your email id, we suspect it is invalid.");
+      email.val("").focus();
+      return false;
+    }
+  });
+
+  var messageBox = $("#message");
+  function showError(message) {
+    messageBox.addClass("alert alert-danger");
+    messageBox.html(message);
+  }
+</script>
+{{ end }}

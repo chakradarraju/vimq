@@ -11,6 +11,7 @@ type User struct {
   PassWord string
   UserLevel string
   EmailId string
+  DisplayName string
 }
 
 var (
@@ -68,13 +69,13 @@ func GetUser(username string) (User, []alert) {
   return user, []alert{}
 }
 
-func SignUp(username string, password string, email string) (User, []alert) {
-user := User{UserId: GetNextId("user"), UserName: username, PassWord: password, EmailId: email, UserLevel: "rookie"}
+func SignUp(user User) (User, []alert) {
   err := uCollection.Insert(&user)
   if err != nil {
     panic(err)
+    return user, []alert{alert{Text:"Internal error in creating user, try again later", Type:"danger"}}
   }
-  return GetUser(username)
+  return user, []alert{}
 }
 
 func GetUsersCollection(db string) *mgo.Collection {

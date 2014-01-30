@@ -150,7 +150,16 @@ func logoutHandler(ctx *web.Context) {
 }
 
 func signupSubmitHandler(ctx *web.Context) {
-  user, alerts := SignUp(ctx.Params["username"], ctx.Params["password"], ctx.Params["email"])
+  user := User {
+    UserId: GetNextId("user"),
+    UserName: ctx.Params["username"],
+    DisplayName: ctx.Params["displayname"],
+    PassWord: ctx.Params["password"],
+    EmailId: ctx.Params["email"],
+    UserLevel: "Rookie",
+  }
+  var alerts []alert
+  user, alerts = SignUp(user)
   if len(alerts) > 0 {
     simplePageHandler("signup")(ctx, alerts...)
     return

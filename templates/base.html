@@ -17,6 +17,12 @@
       .container {
         max-width: 960px;
       }
+      #content div, span {
+        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+        font-weight: 200;
+        font-size: 21px;
+        line-height: 2;
+      }
     </style>
     {{ template "css" . }}
   </head>
@@ -24,7 +30,9 @@
     <div class="container">
       {{ template "header.html" . }}
 
-      {{ template "content" . }}
+      <div id="content">
+        {{ template "content" . }}
+      </div>
     </div>
     <script type="text/javascript" src="/js/lib/jquery.min.js"></script>
     <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>

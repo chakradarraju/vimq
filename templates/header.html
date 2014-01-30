@@ -7,7 +7,7 @@
     {{ end }}
     {{ if .User.UserName }}
       <li class="dropdown {{ addActiveIfNeeded .Context "myprofile" }}">
-        <a href="/myprofile/" class="dropdown-toggle" data-toggle="dropdown">{{ .User.UserName }} <b class="caret"></b></a>
+        <a href="/myprofile/" class="dropdown-toggle" data-toggle="dropdown">{{ .User.DisplayName }} <b class="caret"></b></a>
         <ul class="dropdown-menu pull-right">
           <li><a href="/myprofile/">My Profile</a></li>
           <li><a href="/logout/">Logout</a></li>
