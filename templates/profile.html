@@ -25,6 +25,16 @@
       <div class="col-md-8">{{ .Profile.EmailId }}</div>
     </div>
     {{ end }}
+    {{ if len .AddedQuestions }}
+      <div class="row">
+        <div class="col-md-4 text-right">Added Questions:</div>
+        <div class="col-md-8">
+      {{ range .AddedQuestions }}
+          <a href="/question/{{ .QuestionId }}"> {{ .Question }} </a><br/>
+      {{ end }}
+        </div>
+      </div>
+    {{ end }}
   </div>
 </div>
 {{ end }}

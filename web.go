@@ -48,6 +48,7 @@ type addQuestionData struct {
 type profileData struct {
   templateData
   Profile User
+  AddedQuestions []Question
 }
 
 var (
@@ -65,10 +66,11 @@ func main() {
   web.Get("/login/", simplePageHandler("login"))
   web.Get("/signup/", simplePageHandler("signup"))
   web.Get("/addquestion/", simplePageHandler("addquestion"))
-  web.Get("/myprofile/", profileHandler)
+  web.Get("/myprofile/()", profileHandler)
   web.Get("/profile/(.*)", profileHandler)
+  web.Get("/question/(.*)", questionHandler)
 
-	web.Get("/quiz/", quizHandler)
+	web.Get("/quiz/()", questionHandler)
 
   web.Get("/logout/", logoutHandler)
 
@@ -116,24 +118,32 @@ func simplePageHandler(page string) func(*web.Context, ...alert) {
   }
 }
 
-func profileHandler(ctx *web.Context, users ...string) {
+func profileHandler(ctx *web.Context, userId string, alerts ...alert) {
   loggedInUser, alerts := getLoggedInUser(ctx)
   var user User
-  if len(users) == 0 {
+  if len(userId) == 0 {
     user = loggedInUser
   } else {
     var userAlerts []alert
-    user, userAlerts = GetUserFromUserName(users[0])
+    user, userAlerts = GetUserFromUserName(userId)
     alerts = append(alerts, userAlerts...)
   }
-  Render("profile", profileData{templateData:templateData{User: loggedInUser, Alerts:alerts, Context: ctx}, Profile: user}, ctx, ctx.Params["refresh"] != "")
+
+  Render("profile", profileData{templateData:templateData{User: loggedInUser, Alerts:alerts, Context: ctx}, Profile: user, AddedQuestions: getQuestionsFromId(user.AddedQuestionIds)}, ctx, ctx.Params["refresh"] != "")
 }
 
-func quizHandler(ctx *web.Context, alerts ...alert) {
+func questionHandler(ctx *web.Context, questionId string, alerts ...alert) {
   user, userAlerts := getLoggedInUser(ctx)
   alerts = append(alerts, userAlerts...)
-  Render("quiz", questionData{templateData:templateData{User: user, Alerts: alerts, Context: ctx}, Question:GetRandomQuestion()}, ctx, ctx.Params["refresh"] != "")
+  question := Question{}
+  if len(questionId) > 0 {
+    question = getQuestionFromId(questionId)
+  } else {
+    question = getRandomQuestion()
+  }
+  Render("question", questionData{templateData:templateData{User: user, Alerts: alerts, Context: ctx}, Question:question}, ctx, ctx.Params["refresh"] != "")
 }
+
 func loginSubmitHandler(ctx *web.Context) {
   user, alerts := LogIn(ctx.Params["username"], ctx.Params["password"])
   if len(alerts) > 0 {
@@ -170,15 +180,23 @@ func signupSubmitHandler(ctx *web.Context) {
 
 func addQuestionSubmitHandler(ctx *web.Context) {
   var err error
+  loggedInUser, _ := getLoggedInUser(ctx)
   options := strings.Split(ctx.Params["options"], ";")
   correctoptionindex, err := strconv.Atoi(ctx.Params["correctoptionindex"])
   alerts := []alert{}
   if err != nil {
     alerts = append(alerts, alert{Text:"Problem finding correct option", Type: "danger"})
   } else {
-    correctoption := options[correctoptionindex]
-    alerts = append(alerts, AddQuestion(Question{Question: ctx.Params["question"], Options: options, CorrectOption: correctoption})...)
+    question := Question {
+      QuestionId: GetNextId("question"),
+      Question: ctx.Params["question"],
+      Options: options,
+      CorrectOption: options[correctoptionindex],
+      AddedUserId:loggedInUser.UserId,
+    }
+    alerts = append(alerts, AddQuestion(question)...)
   }
+  simplePageHandler("addquestion")(ctx, alerts...)
 }
 
 func setCookie(ctx *web.Context, name string, value string, age int64) {

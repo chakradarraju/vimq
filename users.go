@@ -12,11 +12,20 @@ type User struct {
   UserLevel string
   EmailId string
   DisplayName string
+  AddedQuestionIds []string
 }
 
 var (
   uCollection *mgo.Collection = GetUsersCollection(getenv("DB"))
 )
+
+func (u *User) NewAddedQuestionId(questionId string) {
+  u.AddedQuestionIds = append(u.AddedQuestionIds, questionId)
+}
+
+func (u *User) Save() {
+  uCollection.Update(bson.M{"userid":u.UserId}, &u)
+}
 
 func GetUserFromBson(query bson.M) (User, []alert) {
   users := []User{}
