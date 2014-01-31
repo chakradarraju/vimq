@@ -41,14 +41,15 @@ type loginData struct {
   templateData
 }
 
-type addQuestionData struct {
-  templateData 
-}
-
 type profileData struct {
   templateData
   Profile User
   AddedQuestions []Question
+}
+
+type editQuestionData struct {
+  templateData
+  Question Question
 }
 
 var (
@@ -65,10 +66,11 @@ func main() {
   web.Get("/home/", simplePageHandler("home"))
   web.Get("/login/", simplePageHandler("login"))
   web.Get("/signup/", simplePageHandler("signup"))
-  web.Get("/addquestion/", simplePageHandler("addquestion"))
+  web.Get("/addquestion/()", editQuestionHandlerGen(false))
   web.Get("/myprofile/()", profileHandler)
   web.Get("/profile/(.*)", profileHandler)
-  web.Get("/question/(.*)", questionHandler)
+  web.Get("/question/(.*)/edit/",editQuestionHandlerGen(false))
+  web.Get("/question/(.*)/", questionHandler)
 
 	web.Get("/quiz/()", questionHandler)
 
@@ -77,6 +79,7 @@ func main() {
   web.Post("/login/", loginSubmitHandler)
   web.Post("/signup/", signupSubmitHandler)
   web.Post("/addquestion/", addQuestionSubmitHandler)
+  web.Post("/question/(.*)/edit/", editQuestionHandlerGen(true))
 
   // Hooks to close db connections
   c := make(chan os.Signal, 1)
@@ -128,8 +131,36 @@ func profileHandler(ctx *web.Context, userId string, alerts ...alert) {
     user, userAlerts = GetUserFromUserName(userId)
     alerts = append(alerts, userAlerts...)
   }
+  addedQuestions, questionAlerts := getQuestionsFromId(user.AddedQuestionIds)
+  alerts = append(alerts, questionAlerts...)
+  Render("profile", profileData{templateData:templateData{User: loggedInUser, Alerts:alerts, Context: ctx}, Profile: user, AddedQuestions: addedQuestions}, ctx, ctx.Params["refresh"] != "")
+}
 
-  Render("profile", profileData{templateData:templateData{User: loggedInUser, Alerts:alerts, Context: ctx}, Profile: user, AddedQuestions: getQuestionsFromId(user.AddedQuestionIds)}, ctx, ctx.Params["refresh"] != "")
+func editQuestionHandlerGen(save bool) func(*web.Context, string, ...alert) {
+  return func(ctx *web.Context, questionId string, alerts ...alert) {
+    user, userAlerts := getLoggedInUser(ctx)
+    alerts = append(alerts, userAlerts...)
+    question := Question{}
+    if len(questionId) > 0 {
+      questionAlerts := []alert{}
+      question, questionAlerts = getQuestionFromId(questionId)
+      alerts = append(alerts, questionAlerts...)
+      if question.AddedUserId != user.UserId {
+        alerts = append(alerts, alert{Text:"Question was added by different user, you can't edit it.", Type:"danger"})
+        Render("empty", templateData{User: user, Alerts: alerts, Context: ctx}, ctx, ctx.Params["refresh"] != "")
+        return
+      }
+      if save {
+        options, correctoption, alerts := getOptions(ctx.Params["options"], ctx.Params["correctoptionindex"])
+        question.Question = ctx.Params["question"]
+        question.Options = options
+        question.CorrectOption = correctoption
+        question.Save()
+        alerts = append(alerts, alert{Text:"Question saved successfully", Type: "success"})
+      }
+    }
+    Render("editquestion", editQuestionData{templateData:templateData{User: user, Alerts: alerts, Context: ctx}, Question: question}, ctx, ctx.Params["refresh"] != "")
+  }
 }
 
 func questionHandler(ctx *web.Context, questionId string, alerts ...alert) {
@@ -137,7 +168,9 @@ func questionHandler(ctx *web.Context, questionId string, alerts ...alert) {
   alerts = append(alerts, userAlerts...)
   question := Question{}
   if len(questionId) > 0 {
-    question = getQuestionFromId(questionId)
+    questionAlerts := []alert{}
+    question, questionAlerts = getQuestionFromId(questionId)
+    alerts = append(alerts, questionAlerts...)
   } else {
     question = getRandomQuestion()
   }
@@ -178,25 +211,31 @@ func signupSubmitHandler(ctx *web.Context) {
   ctx.Redirect(301, "/home/")
 }
 
-func addQuestionSubmitHandler(ctx *web.Context) {
-  var err error
-  loggedInUser, _ := getLoggedInUser(ctx)
-  options := strings.Split(ctx.Params["options"], ";")
-  correctoptionindex, err := strconv.Atoi(ctx.Params["correctoptionindex"])
+func getOptions(optionsstr string, correctoptionindexstr string) ([]string, string, []alert) {
+  options := strings.Split(optionsstr, ";")
+  correctoptionindex, err := strconv.Atoi(correctoptionindexstr)
   alerts := []alert{}
-  if err != nil {
-    alerts = append(alerts, alert{Text:"Problem finding correct option", Type: "danger"})
-  } else {
+  if err != nil || correctoptionindex >= len(options) {
+    return []string{}, "", []alert{alert{Text:"Problem finding correct option", Type: "danger"}}
+  }
+  return options, options[correctoptionindex], alerts
+}
+
+func addQuestionSubmitHandler(ctx *web.Context) {
+  loggedInUser, _ := getLoggedInUser(ctx)
+  options, correctoption, alerts := getOptions(ctx.Params["options"], ctx.Params["correctoptionindex"])
+  if len(options) > 0 {
     question := Question {
       QuestionId: GetNextId("question"),
       Question: ctx.Params["question"],
       Options: options,
-      CorrectOption: options[correctoptionindex],
+      CorrectOption: correctoption,
       AddedUserId:loggedInUser.UserId,
     }
     alerts = append(alerts, AddQuestion(question)...)
+    ctx.Redirect(301, "/question/" + question.QuestionId + "/edit/")
   }
-  simplePageHandler("addquestion")(ctx, alerts...)
+  simplePageHandler("editquestion")(ctx, alerts...)
 }
 
 func setCookie(ctx *web.Context, name string, value string, age int64) {

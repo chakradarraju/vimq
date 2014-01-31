@@ -5,6 +5,7 @@ import (
   "html/template"
   "github.com/hoisie/web"
   "strings"
+  "encoding/json"
 )
 
 var (
@@ -32,6 +33,10 @@ func parseTemplate(file string) *template.Template {
         }
       }
       return ""
+    },
+    "marshal": func(v interface {}) template.JS {
+      a, _ := json.Marshal(v)
+      return template.JS(a)
     },
   }
   t, err := template.New("base.html").Funcs(myfuncs).ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")

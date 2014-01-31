@@ -40,22 +40,35 @@ func AddQuestion(question Question) []alert {
   return []alert{alert{Text:"Error in adding question", Type:"danger"}}
 }
 
-func getQuestionsFromId(questionIds []string) []Question {
+func getQuestionsFromId(questionIds []string) ([]Question, []alert) {
   qdata := make([]Question, len(questionIds))
+  alerts := []alert{}
   for i, questionId := range questionIds {
-    qdata[i] = getQuestionFromId(questionId)
+    newAlerts := []alert{}
+    qdata[i], newAlerts = getQuestionFromId(questionId)
+    alerts = append(alerts, newAlerts...)
   }
-  return qdata
+  return qdata, alerts
 }
 
-func getQuestionFromId(id string) Question {
-  question := Question{}
-  if err := qCollection.Find(bson.M{"questionid": id}).One(&question); err != nil {
+func getQuestionFromId(id string) (Question, []alert) {
+  questions := []Question{}
+  if err := qCollection.Find(bson.M{"questionid": id}).All(&questions); err != nil {
     panic(err)
   }
-  return question
+  alerts := []alert{}
+  if len(questions) < 1 {
+    return Question{}, []alert{alert{Text:"Question with id " + id + " not found", Type: "danger"}}
+  } else if len(questions) > 1 {
+    alerts = []alert{alert{Text:"More than one question with id " + id + " found", Type: "warning"}}
+  }
+  return questions[0], alerts
 }
 
 func GetQuestionsCollection(db string) *mgo.Collection {
   return GetCollection(GetMgoConnection(), db, "questions")
+}
+
+func (q *Question) Save() {
+  qCollection.Update(bson.M{"questionid":q.QuestionId}, &q)
 }

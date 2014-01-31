@@ -5,32 +5,32 @@
 <div class="row">
   <div class="col-md-4">
     {{ if .Profile.UserName }}
-    <span>{{ .Profile.UserName }}</span>
+    <span class="text">{{ .Profile.UserName }}</span>
     {{ end }}
     <img src="/img/comingsoon.jpg" />
     {{ if .Profile.UserLevel }}
-    <span>Level: {{ .Profile.UserLevel }}</span>
+    <span class="text">Level: {{ .Profile.UserLevel }}</span>
     {{ end }}
   </div>
   <div class="col-md-8">
     {{ if .Profile.DisplayName }}
     <div class="row">
-      <div class="col-md-4 text-right">Display Name:</div>
-      <div class="col-md-8">{{ .Profile.DisplayName }}</div>
+      <div class="col-md-4 text text-right">Display Name:</div>
+      <div class="col-md-8 text">{{ .Profile.DisplayName }}</div>
     </div>
     {{ end }}
     {{ if .Profile.EmailId }}
     <div class="row">
-      <div class="col-md-4 text-right">Email-id:</div>
-      <div class="col-md-8">{{ .Profile.EmailId }}</div>
+      <div class="col-md-4 text text-right">Email-id:</div>
+      <div class="col-md-8 text">{{ .Profile.EmailId }}</div>
     </div>
     {{ end }}
     {{ if len .AddedQuestions }}
       <div class="row">
-        <div class="col-md-4 text-right">Added Questions:</div>
-        <div class="col-md-8">
+        <div class="col-md-4 text text-right">Added Questions:</div>
+        <div class="col-md-8 text">
       {{ range .AddedQuestions }}
-          <a href="/question/{{ .QuestionId }}"> {{ .Question }} </a><br/>
+          <a href="/question/{{ .QuestionId }}/"> {{ .Question }} </a> <a href="/question/{{ .QuestionId }}/edit/">edit</a><br/>
       {{ end }}
         </div>
       </div>

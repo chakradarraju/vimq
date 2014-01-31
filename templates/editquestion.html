@@ -1,11 +1,12 @@
 {{ define "content" }}
   <form id="addQuestionForm" action="." method="POST">
-    <textarea name="question" class="form-control" placeholder="Question..." required autofocus></textarea>
+    <textarea name="question" class="form-control" placeholder="Question..." required autofocus>{{ if .Question }}{{.Question.Question }}{{ end }}
+    </textarea>
     Options:<br/>
     <div id="optionsContainer">
     </div>
     <button type="button" class="btn btn-default btn-block" id="addOptionBtn">Add option...</button>
-    <button type="submit" class="btn btn-lg btn-primary btn-block">Submit Question</button>
+    <button type="submit" class="btn btn-lg btn-primary btn-block">Submit</button>
   </form>
 {{ end }}
 
@@ -16,7 +17,7 @@
     $("#addOptionBtn").click(function() {
       var newOption = createNewOption();
       optionsContainer.append(newOption);
-      $("input", newOption).focus();
+      $("[type='text']", newOption).focus();
     });
 
     function createNewOption() {
@@ -44,6 +45,18 @@
       var radioButtons = $("input:radio", optionsContainer);
       return radioButtons.index(radioButtons.filter(":checked"));
     }
+
+    {{ if .Question.Options }}
+    $({{ marshal .Question.Options }}).each(function(i, val) {
+      var newOption = createNewOption();
+      $("[type='text']", newOption).val(val);
+      if (val == "{{ .Question.CorrectOption }}")
+        $("[type='radio']", newOption).attr('checked',true);
+      optionsContainer.append(newOption);
+      $("[type='text']", newOption).focus();
+    });
+    $("textarea").focus();
+    {{ end }}
   </script>
 {{ end }}
 
