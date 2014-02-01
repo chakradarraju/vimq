@@ -34,9 +34,9 @@
       {{ if shouldShowEditOptions .Profile .User }}
       {{ range .AddedQuestions }}
         <div>
-          <a class="btn btn-success pull-right" href="/question/{{ .QuestionId }}/edit/"><span class="glyphicon glyphicon-pencil"></span></a>
+          <form class="pull-right"><a class="btn btn-success" href="/question/{{ .QuestionId }}/edit/"><span class="glyphicon glyphicon-pencil"></span></a></form>
           <span class="pull-right">&nbsp;</span>&nbsp;
-          <a class="btn btn-danger pull-right" href="/question/{{ .QuestionId }}/delete/"><span class="glyphicon glyphicon-trash"></span></a>
+          <form class="pull-right" action="/question/{{ .QuestionId }}/delete/" method="POST" onsubmit="return confirmDelete('{{ .Question }}')"><button class="btn btn-danger"><span class="glyphicon glyphicon-trash"></span></button></form>
         </div>
       {{ end }}
       {{ end }}
@@ -52,4 +52,12 @@
     {{ end }}
   </div>
 </div>
+{{ end }}
+
+{{ define "js" }}
+<script type="text/javascript" charset="utf-8">
+  function confirmDelete(question) {
+    return confirm("Are you sure you want to delete '" + question + "'?");
+  }
+</script>
 {{ end }}

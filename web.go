@@ -48,8 +48,8 @@ var (
    TODOs:
    * ajax posts
    * server validation
-   * Delete question
    * replace cookie based alerts
+   * implement returnto for request that will redirect
 */
 
 func main() {
@@ -76,6 +76,7 @@ func main() {
   web.Post("/signup/", signupSubmitHandler)
   web.Post("/addquestion/", addQuestionSubmitHandler)
   web.Post("/question/(.*)/edit/", editQuestionHandlerGen(true))
+  web.Post("/question/(.*)/delete/", deleteQuestionHandler)
 
   // Hooks to close db connections
   c := make(chan os.Signal, 1)
@@ -158,6 +159,11 @@ func editQuestionHandlerGen(save bool) func(*web.Context, string) {
     }
     Render("editquestion", editQuestionData{templateData:templateData{User: user, Context: ctx}, Question: question}, ctx, ctx.Params["refresh"] != "")
   }
+}
+
+func deleteQuestionHandler(ctx *web.Context, questionId string) {
+  deleteQuestion(questionId, getNotifier(ctx))
+  ctx.Redirect(301, "/myprofile/")
 }
 
 func questionHandler(ctx *web.Context, questionId string) {
