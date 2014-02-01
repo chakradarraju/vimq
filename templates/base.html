@@ -30,12 +30,26 @@
     <div class="container">
       {{ template "header.html" . }}
 
+      <div id="alerts"> </div>
       <div id="content">
         {{ template "content" . }}
       </div>
     </div>
     <script type="text/javascript" src="/js/lib/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/lib/jquery.cookie.js"></script>
     <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
     {{ template "js" . }}
+    <script type="text/javascript">
+      $(["info","danger","warning"]).each(function(i, type) {
+        var cookie = $.cookie(type);
+        if(cookie && cookie.length > 0) {
+          cookie = decodeURIComponent(cookie);
+          $(cookie.replace(/\+/g," ").split(";")).each(function(i, alert) {
+            $("<div>").addClass("alert alert-"+type).html(alert).appendTo("#alerts");
+          });
+          $.removeCookie(type, {path:"/"});
+        }
+      });
+    </script>
   </body>
 </html>

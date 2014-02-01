@@ -1,29 +1,17 @@
 package main
 
 import (
-  "bytes"
-  "crypto/hmac"
-  "crypto/sha1"
 	"fmt"
-	"net/http"
 	"os"
   "os/signal"
   "github.com/hoisie/web"
   "log"
-  "time"
-  "encoding/base64"
   "strconv"
   "strings"
 )
 
-type alert struct {
-  Text string
-  Type string
-}
-
 type templateData struct {
   User User
-  Alerts []alert
   PageTitle string
   Context *web.Context
 }
@@ -56,6 +44,13 @@ var (
   logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 )
 
+/*
+   TODOs:
+   1) ajax posts
+   2) server validation
+   3) 
+*/
+
 func main() {
 
   // Configs
@@ -68,7 +63,7 @@ func main() {
   web.Get("/signup/", simplePageHandler("signup"))
   web.Get("/addquestion/()", editQuestionHandlerGen(false))
   web.Get("/myprofile/()", profileHandler)
-  web.Get("/profile/(.*)", profileHandler)
+  web.Get("/profile/(.*)/", profileHandler)
   web.Get("/question/(.*)/edit/",editQuestionHandlerGen(false))
   web.Get("/question/(.*)/", questionHandler)
 
@@ -105,90 +100,88 @@ func getenv(env string) string {
   return os.Getenv(env)
 }
 
-func getLoggedInUser(ctx *web.Context) (User, []alert) {
+func getLoggedInUser(ctx *web.Context) User {
   userid, _ := ctx.GetSecureCookie("userid")
   if userid == "" {
-    return User{}, []alert{}
+    return User{}
   }
-  return GetUserFromId(userid)
+  return GetUserFromId(userid, getNotifier(ctx))
 }
 
-func simplePageHandler(page string) func(*web.Context, ...alert) {
-  return func(ctx *web.Context, alerts ...alert) {
-    user, userAlerts := getLoggedInUser(ctx)
-    alerts = append(alerts, userAlerts...)
-    Render(page, templateData{User: user, Alerts: alerts, Context: ctx}, ctx, ctx.Params["refresh"] != "")
+//var notifications map[*web.Context]map[string][]string
+
+func getNotifier(ctx *web.Context) func(string,string) {
+  return func(typ string, message string) {
+    appendToCookie(ctx, typ, message, 30)
   }
 }
 
-func profileHandler(ctx *web.Context, userId string, alerts ...alert) {
-  loggedInUser, alerts := getLoggedInUser(ctx)
+func simplePageHandler(page string) func(*web.Context) {
+  return func(ctx *web.Context) {
+    user := getLoggedInUser(ctx)
+    Render(page, templateData{User: user, Context: ctx}, ctx, ctx.Params["refresh"] != "")
+  }
+}
+
+func profileHandler(ctx *web.Context, userId string) {
+  loggedInUser := getLoggedInUser(ctx)
   var user User
   if len(userId) == 0 {
     user = loggedInUser
   } else {
-    var userAlerts []alert
-    user, userAlerts = GetUserFromUserName(userId)
-    alerts = append(alerts, userAlerts...)
+    user = GetUserFromUserName(userId, getNotifier(ctx))
   }
-  addedQuestions, questionAlerts := getQuestionsFromId(user.AddedQuestionIds)
-  alerts = append(alerts, questionAlerts...)
-  Render("profile", profileData{templateData:templateData{User: loggedInUser, Alerts:alerts, Context: ctx}, Profile: user, AddedQuestions: addedQuestions}, ctx, ctx.Params["refresh"] != "")
+  addedQuestions := getQuestionsFromId(user.AddedQuestionIds, getNotifier(ctx))
+  Render("profile", profileData{templateData:templateData{User: loggedInUser, Context: ctx}, Profile: user, AddedQuestions: addedQuestions}, ctx, ctx.Params["refresh"] != "")
 }
 
-func editQuestionHandlerGen(save bool) func(*web.Context, string, ...alert) {
-  return func(ctx *web.Context, questionId string, alerts ...alert) {
-    user, userAlerts := getLoggedInUser(ctx)
-    alerts = append(alerts, userAlerts...)
+func editQuestionHandlerGen(save bool) func(*web.Context, string) {
+  return func(ctx *web.Context, questionId string) {
+    user := getLoggedInUser(ctx)
     question := Question{}
     if len(questionId) > 0 {
-      questionAlerts := []alert{}
-      question, questionAlerts = getQuestionFromId(questionId)
-      alerts = append(alerts, questionAlerts...)
+      question = getQuestionFromId(questionId, getNotifier(ctx))
       if question.AddedUserId != user.UserId {
-        alerts = append(alerts, alert{Text:"Question was added by different user, you can't edit it.", Type:"danger"})
-        Render("empty", templateData{User: user, Alerts: alerts, Context: ctx}, ctx, ctx.Params["refresh"] != "")
+        getNotifier(ctx)("danger", "Question was added by differentuser, you can't edit it.")
+        Render("empty", templateData{User: user, Context: ctx}, ctx, ctx.Params["refresh"] != "")
         return
       }
       if save {
-        options, correctoption, alerts := getOptions(ctx.Params["options"], ctx.Params["correctoptionindex"])
+        options, correctoption := getOptions(ctx.Params["options"], ctx.Params["correctoptionindex"], getNotifier(ctx))
         question.Question = ctx.Params["question"]
         question.Options = options
         question.CorrectOption = correctoption
         question.Save()
-        alerts = append(alerts, alert{Text:"Question saved successfully", Type: "success"})
+        getNotifier(ctx)("success", "Question saved successfully")
       }
     }
-    Render("editquestion", editQuestionData{templateData:templateData{User: user, Alerts: alerts, Context: ctx}, Question: question}, ctx, ctx.Params["refresh"] != "")
+    Render("editquestion", editQuestionData{templateData:templateData{User: user, Context: ctx}, Question: question}, ctx, ctx.Params["refresh"] != "")
   }
 }
 
-func questionHandler(ctx *web.Context, questionId string, alerts ...alert) {
-  user, userAlerts := getLoggedInUser(ctx)
-  alerts = append(alerts, userAlerts...)
+func questionHandler(ctx *web.Context, questionId string) {
+  user := getLoggedInUser(ctx)
   question := Question{}
   if len(questionId) > 0 {
-    questionAlerts := []alert{}
-    question, questionAlerts = getQuestionFromId(questionId)
-    alerts = append(alerts, questionAlerts...)
+    question = getQuestionFromId(questionId, getNotifier(ctx))
   } else {
     question = getRandomQuestion()
   }
-  Render("question", questionData{templateData:templateData{User: user, Alerts: alerts, Context: ctx}, Question:question}, ctx, ctx.Params["refresh"] != "")
+  Render("question", questionData{templateData:templateData{User: user, Context: ctx}, Question:question}, ctx, ctx.Params["refresh"] != "")
 }
 
 func loginSubmitHandler(ctx *web.Context) {
-  user, alerts := LogIn(ctx.Params["username"], ctx.Params["password"])
-  if len(alerts) > 0 {
-    simplePageHandler("login")(ctx, alerts...)
+  user := LogIn(ctx.Params["username"], ctx.Params["password"], getNotifier(ctx))
+  if len(user.UserId) == 0 {
+    simplePageHandler("login")(ctx)
     return
   }
-  setCookie(ctx, "userid", user.UserId, 0)
+  setSecureCookie(ctx, "userid", user.UserId, 0)
   ctx.Redirect(301, "/home/")
 }
 
 func logoutHandler(ctx *web.Context) {
-  setCookie(ctx, "userid", "", -1) // Deleting cookie
+  setSecureCookie(ctx, "userid", "", -1) // Deleting cookie
   ctx.Redirect(301, "/home/")
 }
 
@@ -201,29 +194,28 @@ func signupSubmitHandler(ctx *web.Context) {
     EmailId: ctx.Params["email"],
     UserLevel: "Rookie",
   }
-  var alerts []alert
-  user, alerts = SignUp(user)
-  if len(alerts) > 0 {
-    simplePageHandler("signup")(ctx, alerts...)
+  user = SignUp(user, getNotifier(ctx))
+  if len(user.UserId) == 0 {
+    simplePageHandler("signup")(ctx)
     return
   }
   setCookie(ctx, "userid", user.UserId, 0)
   ctx.Redirect(301, "/home/")
 }
 
-func getOptions(optionsstr string, correctoptionindexstr string) ([]string, string, []alert) {
+func getOptions(optionsstr string, correctoptionindexstr string, notifier func(string,string)) ([]string, string) {
   options := strings.Split(optionsstr, ";")
   correctoptionindex, err := strconv.Atoi(correctoptionindexstr)
-  alerts := []alert{}
   if err != nil || correctoptionindex >= len(options) {
-    return []string{}, "", []alert{alert{Text:"Problem finding correct option", Type: "danger"}}
+    notifier("danger", "Problem finding correct option")
+    return []string{}, ""
   }
-  return options, options[correctoptionindex], alerts
+  return options, options[correctoptionindex]
 }
 
 func addQuestionSubmitHandler(ctx *web.Context) {
-  loggedInUser, _ := getLoggedInUser(ctx)
-  options, correctoption, alerts := getOptions(ctx.Params["options"], ctx.Params["correctoptionindex"])
+  loggedInUser := getLoggedInUser(ctx)
+  options, correctoption := getOptions(ctx.Params["options"], ctx.Params["correctoptionindex"], getNotifier(ctx))
   if len(options) > 0 {
     question := Question {
       QuestionId: GetNextId("question"),
@@ -232,41 +224,9 @@ func addQuestionSubmitHandler(ctx *web.Context) {
       CorrectOption: correctoption,
       AddedUserId:loggedInUser.UserId,
     }
-    alerts = append(alerts, AddQuestion(question)...)
+    AddQuestion(question, getNotifier(ctx))
     ctx.Redirect(301, "/question/" + question.QuestionId + "/edit/")
   }
-  simplePageHandler("editquestion")(ctx, alerts...)
+  simplePageHandler("editquestion")(ctx)
 }
 
-func setCookie(ctx *web.Context, name string, value string, age int64) {
-  if len(ctx.Server.Config.CookieSecret) == 0 {
-      ctx.Server.Logger.Println("Secret Key for secure cookies has not been set. Please assign a cookie secret to web.Config.CookieSecret.")
-      return
-  }
-  var buf bytes.Buffer
-  encoder := base64.NewEncoder(base64.StdEncoding, &buf)
-  encoder.Write([]byte(value))
-  encoder.Close()
-  vs := buf.String()
-  vb := buf.Bytes()
-  timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-  sig := getCookieSig(ctx.Server.Config.CookieSecret, vb, timestamp)
-  cookie := strings.Join([]string{vs, timestamp, sig}, "|")
-  var expiry time.Time
-  if age == 0 {
-    expiry = time.Unix(2147483647, 0)
-  } else {
-    expiry = time.Unix(time.Now().Unix()+age, 0)
-  }
-  ctx.SetCookie(&http.Cookie{Name: name, Value: cookie, Expires: expiry, Path: "/"})
-}
-
-func getCookieSig(key string, val []byte, timestamp string) string {
-  hm := hmac.New(sha1.New, []byte(key))
-
-  hm.Write(val)
-  hm.Write([]byte(timestamp))
-
-  hex := fmt.Sprintf("%02x", hm.Sum(nil))
-  return hex
-}

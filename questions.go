@@ -27,42 +27,38 @@ func getRandomQuestion() Question {
   return qdata
 }
 
-func AddQuestion(question Question) []alert {
+func AddQuestion(question Question, notifier func(string,string)) {
   err := qCollection.Insert(&question)
   if err == nil {
     logger.Println(fmt.Sprintf("%+v",question))
-    user, _ := GetUserFromId(question.AddedUserId)
+    user := GetUserFromId(question.AddedUserId, notifier)
     user.NewAddedQuestionId(question.QuestionId)
     user.Save()
-    return []alert{alert{Text:"Question added successfully", Type:"info"}}
+    return
   }
   panic(err)
-  return []alert{alert{Text:"Error in adding question", Type:"danger"}}
 }
 
-func getQuestionsFromId(questionIds []string) ([]Question, []alert) {
+func getQuestionsFromId(questionIds []string, notifier func(string,string)) []Question {
   qdata := make([]Question, len(questionIds))
-  alerts := []alert{}
   for i, questionId := range questionIds {
-    newAlerts := []alert{}
-    qdata[i], newAlerts = getQuestionFromId(questionId)
-    alerts = append(alerts, newAlerts...)
+    qdata[i] = getQuestionFromId(questionId, notifier)
   }
-  return qdata, alerts
+  return qdata
 }
 
-func getQuestionFromId(id string) (Question, []alert) {
+func getQuestionFromId(id string, notifier func(string,string)) Question {
   questions := []Question{}
   if err := qCollection.Find(bson.M{"questionid": id}).All(&questions); err != nil {
     panic(err)
   }
-  alerts := []alert{}
   if len(questions) < 1 {
-    return Question{}, []alert{alert{Text:"Question with id " + id + " not found", Type: "danger"}}
+    notifier("danger", "Question with id " + id + " not found")
+    return Question{}
   } else if len(questions) > 1 {
-    alerts = []alert{alert{Text:"More than one question with id " + id + " found", Type: "warning"}}
+    notifier("warning", "More than one question with id " + id + " found")
   }
-  return questions[0], alerts
+  return questions[0]
 }
 
 func GetQuestionsCollection(db string) *mgo.Collection {
