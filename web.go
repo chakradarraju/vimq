@@ -46,9 +46,10 @@ var (
 
 /*
    TODOs:
-   1) ajax posts
-   2) server validation
-   3) 
+   * ajax posts
+   * server validation
+   * Delete question
+   * replace cookie based alerts
 */
 
 func main() {

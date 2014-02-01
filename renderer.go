@@ -38,6 +38,9 @@ func parseTemplate(file string) *template.Template {
       a, _ := json.Marshal(v)
       return template.JS(a)
     },
+    "shouldShowEditOptions": func(profile User, loggedIn User) bool {
+      return profile.UserId == loggedIn.UserId
+    },
   }
   t, err := template.New("base.html").Funcs(myfuncs).ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")
   if err != nil {

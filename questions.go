@@ -3,7 +3,6 @@ package main
 import (
   "labix.org/v2/mgo"
   "labix.org/v2/mgo/bson"
-  "fmt"
 )
 
 var (
@@ -30,10 +29,10 @@ func getRandomQuestion() Question {
 func AddQuestion(question Question, notifier func(string,string)) {
   err := qCollection.Insert(&question)
   if err == nil {
-    logger.Println(fmt.Sprintf("%+v",question))
     user := GetUserFromId(question.AddedUserId, notifier)
     user.NewAddedQuestionId(question.QuestionId)
     user.Save()
+    notifier("info", "Question created successfully")
     return
   }
   panic(err)

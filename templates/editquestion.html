@@ -1,7 +1,6 @@
 {{ define "content" }}
   <form id="addQuestionForm" action="." method="POST">
-    <textarea name="question" class="form-control" placeholder="Question..." required autofocus>{{ if .Question }}{{.Question.Question }}{{ end }}
-    </textarea>
+    <textarea name="question" class="form-control" placeholder="Question..." required autofocus>{{ if .Question }}{{.Question.Question }}{{ end }}</textarea>
     Options:<br/>
     <div id="optionsContainer">
     </div>
