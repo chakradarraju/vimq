@@ -8,12 +8,19 @@ import (
   "log"
   "strconv"
   "strings"
+  "github.com/gorilla/sessions"
+)
+
+var (
+  store *sessions.FilesystemStore = sessions.NewFilesystemStore("", []byte(getenv("COOKIESECRET")))
+  logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 )
 
 type templateData struct {
   User User
   PageTitle string
   Context *web.Context
+  Alerts map[string][]string
 }
 
 type homeData struct {
@@ -40,16 +47,14 @@ type editQuestionData struct {
   Question Question
 }
 
-var (
-  logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
-)
-
 /*
    TODOs:
    * ajax posts
    * server validation
-   * replace cookie based alerts
    * implement returnto for request that will redirect
+   * Email verification
+   * Discussion on question
+   * Collect stats for questions and users => and grade question and users to show question of relevant difficulty to every user
 */
 
 func main() {
@@ -110,18 +115,32 @@ func getLoggedInUser(ctx *web.Context) User {
   return GetUserFromId(userid, getNotifier(ctx))
 }
 
-//var notifications map[*web.Context]map[string][]string
-
 func getNotifier(ctx *web.Context) func(string,string) {
+  session, _ := store.Get(ctx.Request, "session")
   return func(typ string, message string) {
-    appendToCookie(ctx, typ, message, 30)
+    if _, ok := session.Values[typ]; !ok {
+      session.Values[typ] = []string{}
+    }
+    session.Values[typ] = append(session.Values[typ].([]string), message)
+    session.Save(ctx.Request, ctx)
   }
+}
+
+func getNotifications(ctx *web.Context) map[string][]string {
+  session, _ := store.Get(ctx.Request, "session")
+  ret := map[string][]string{}
+  for k, v := range session.Values {
+    ret[k.(string)] = v.([]string)
+    session.Values[k] = []string{}
+  }
+  session.Save(ctx.Request, ctx)
+  return ret
 }
 
 func simplePageHandler(page string) func(*web.Context) {
   return func(ctx *web.Context) {
     user := getLoggedInUser(ctx)
-    Render(page, templateData{User: user, Context: ctx}, ctx, ctx.Params["refresh"] != "")
+    Render(page, templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, ctx, ctx.Params["refresh"] != "")
   }
 }
 
@@ -134,7 +153,7 @@ func profileHandler(ctx *web.Context, userId string) {
     user = GetUserFromUserName(userId, getNotifier(ctx))
   }
   addedQuestions := getQuestionsFromId(user.AddedQuestionIds, getNotifier(ctx))
-  Render("profile", profileData{templateData:templateData{User: loggedInUser, Context: ctx}, Profile: user, AddedQuestions: addedQuestions}, ctx, ctx.Params["refresh"] != "")
+  Render("profile", profileData{templateData:templateData{User: loggedInUser, Context: ctx, Alerts: getNotifications(ctx)}, Profile: user, AddedQuestions: addedQuestions}, ctx, ctx.Params["refresh"] != "")
 }
 
 func editQuestionHandlerGen(save bool) func(*web.Context, string) {
@@ -145,7 +164,7 @@ func editQuestionHandlerGen(save bool) func(*web.Context, string) {
       question = getQuestionFromId(questionId, getNotifier(ctx))
       if question.AddedUserId != user.UserId {
         getNotifier(ctx)("danger", "Question was added by differentuser, you can't edit it.")
-        Render("empty", templateData{User: user, Context: ctx}, ctx, ctx.Params["refresh"] != "")
+        Render("empty", templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, ctx, ctx.Params["refresh"] != "")
         return
       }
       if save {
@@ -153,11 +172,12 @@ func editQuestionHandlerGen(save bool) func(*web.Context, string) {
         question.Question = ctx.Params["question"]
         question.Options = options
         question.CorrectOption = correctoption
+        question.Explanation = ctx.Params["explanation"]
         question.Save()
         getNotifier(ctx)("success", "Question saved successfully")
       }
     }
-    Render("editquestion", editQuestionData{templateData:templateData{User: user, Context: ctx}, Question: question}, ctx, ctx.Params["refresh"] != "")
+    Render("editquestion", editQuestionData{templateData:templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, Question: question}, ctx, ctx.Params["refresh"] != "")
   }
 }
 
@@ -174,7 +194,7 @@ func questionHandler(ctx *web.Context, questionId string) {
   } else {
     question = getRandomQuestion()
   }
-  Render("question", questionData{templateData:templateData{User: user, Context: ctx}, Question:question}, ctx, ctx.Params["refresh"] != "")
+  Render("question", questionData{templateData:templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, Question:question}, ctx, ctx.Params["refresh"] != "")
 }
 
 func loginSubmitHandler(ctx *web.Context) {
@@ -206,7 +226,7 @@ func signupSubmitHandler(ctx *web.Context) {
     simplePageHandler("signup")(ctx)
     return
   }
-  setCookie(ctx, "userid", user.UserId, 0)
+  setSecureCookie(ctx, "userid", user.UserId, 0)
   ctx.Redirect(301, "/home/")
 }
 
@@ -230,9 +250,11 @@ func addQuestionSubmitHandler(ctx *web.Context) {
       Options: options,
       CorrectOption: correctoption,
       AddedUserId:loggedInUser.UserId,
+      Explanation: ctx.Params["explanation"],
     }
     AddQuestion(question, getNotifier(ctx))
     ctx.Redirect(301, "/question/" + question.QuestionId + "/edit/")
+    return
   }
   simplePageHandler("editquestion")(ctx)
 }

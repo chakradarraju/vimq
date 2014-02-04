@@ -5,6 +5,8 @@
     <div id="optionsContainer">
     </div>
     <button type="button" class="btn btn-default btn-block" id="addOptionBtn">Add option...</button>
+    Explanation:<br/>
+    <textarea name="explanation" class="form-control" placeholder="Explanation...">{{ if .Question }}{{ .Question.Explanation }}{{ end }}</textarea>
     <button type="submit" class="btn btn-lg btn-primary btn-block">Submit</button>
   </form>
 {{ end }}

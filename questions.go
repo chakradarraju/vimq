@@ -15,6 +15,7 @@ type Question struct {
   Options []string
   CorrectOption string
   AddedUserId string
+  Explanation string
 }
 
 func getRandomQuestion() Question {
@@ -32,6 +33,7 @@ func AddQuestion(question Question, notify func(string,string)) {
     user := GetUserFromId(question.AddedUserId, notify)
     user.NewAddedQuestionId(question.QuestionId)
     user.Save()
+    logger.Println("Added notification")
     notify("info", "Question created successfully")
     return
   }

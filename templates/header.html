@@ -21,3 +21,8 @@
   </ul>
   <h2 class="text-muted">VimQ</h2>
 </div>
+{{ range $key, $value := .Alerts }}
+  {{ range $value }}
+    <div class="alert alert-{{ $key }}">{{ . }}</div>
+  {{ end }}
+{{ end }}

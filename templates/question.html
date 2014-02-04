@@ -1,5 +1,11 @@
 {{ define "content" }}
   <span class="text"> {{ .Question.Question }} </span><br/>
+  <div id="explanation" class="panel panel-default">
+    <div class="panel-heading"><h3 class="panel-title">Explanation</h3></div>
+    <div class="panel-body">
+      {{ .Question.Explanation }}
+    </div>
+  </div>
   <div class="btn-group-vertical">
     {{ range .Question.Options }}
     <button type="button" class="btn btn-default answer-button" onclick="checkAnswer(this)">{{ . }}</button>
@@ -9,12 +15,14 @@
 
 {{ define "js" }}
   <script type="text/javascript" charset="utf-8">
+    $("#explanation").hide();
     function checkAnswer(optionElement) {
       $(optionElement).removeClass("btn-default").addClass(
         optionElement.innerHTML == "{{ .Question.CorrectOption }}"?"btn-success":"btn-warning");
       $(".answer-button").each(function(index, btn) {
         btn.disabled = true;
       });
+      $("#explanation").slideDown();
     }
   </script>
 {{ end }}

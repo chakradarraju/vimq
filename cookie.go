@@ -10,18 +10,8 @@ import (
   "strconv"
   "strings"
   "net/http"
-  "net/url"
   "fmt"
 )
-
-func appendToCookie(ctx *web.Context, name string, value string, age int64) {
-  cookie, _ := ctx.Request.Cookie(name)
-  if cookie == nil {
-    setCookie(ctx, name, url.QueryEscape(value), age)
-    return
-  }
-  setCookie(ctx, name, cookie.Value + url.QueryEscape(";" + value), age)
-}
 
 func setCookie(ctx *web.Context, name string, value string, age int64) {
   var expiry time.Time
