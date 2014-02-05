@@ -1,13 +1,15 @@
 {{ define "pagetitle" }} VimQ - SignUp {{ end }}
 
 {{ define "content" }}
-<div id="message">
+<div id="alertContainer">
+  <div id="message">
+  </div>
 </div>
 <div class="row">
   <div class="col-md-4"></div>
   <div class="col-md-4">
     <form id="signupform" class="form-signin" role="form" action="." method="POST">
-      <input name="username" class="form-control" placeholder="Username" required autofocus />
+      <div class="input-group"><input name="username" id="usernameinput" class="form-control" placeholder="Username" required autofocus /><span class="input-group-btn"><button id="availabilityBtn" type="button" tabindex='-1' class="btn btn-default" onclick="checkAvailability()"><span class="glyphicon glyphicon-search"></button></span></div>
       <input name="displayname" class="form-control" placeholder="Display Name" required />
       <input name="password" type="password" class="form-control" placeholder="Password" required />
       <input type="password" id="confirmpassword" class="form-control" placeholder="Confirm password" required />
@@ -23,6 +25,28 @@
   window.onerror = function() {
     alert("An client side error occured");
   }
+
+  $("#usernameinput").change(function() {
+    var btn = $("#availabilityBtn");
+    btn.attr("disabled", true);
+    $.get("/checkusernameavailability/"+$("input[name='username']").val(), {}, function(data) {
+      var alertContainer = $("#alertContainer");
+      $(data.alerts).each(function(type, alerts) {
+        $(alerts).each(function(i, alert) {
+          $("<div></div>").addClass("alert alert-"+type).html(alert).appendTo(alertContainer);
+        });
+      });
+      btn.removeClass("btn-default").addClass(data.availability ? "btn-success" : "btn-danger");
+      $("span", btn).removeClass("glyphicon-search").addClass(data.availability ? "glyphicon-ok" : "glyphicon-remove");
+    }, "json");
+  });
+
+  $("#usernameinput").keypress(function() {
+    var btn = $("#availabilityBtn");
+    btn.attr("disabled", null);
+    btn.removeClass("btn-success btn-danger").addClass("btn-default");
+    $("span", btn).removeClass("glyphicon-ok glyphicon-remove").addClass("glyphicon-search");
+  });
 
   var usernameRe = /^[A-Za-z0-9]{6,32}$/,
       validUsernameMessage = "A valid username should be atleast 6, atmost 32 characters and should contain only alphabets and numbers (no special characters)",

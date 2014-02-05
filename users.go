@@ -111,6 +111,11 @@ func SignUp(user User, notify func(string,string)) User {
   return user
 }
 
+func checkUserNameAvailability(username string, notify func(string,string)) bool {
+  user := GetUserFromUserName(username, func(a string, b string) {})
+  return user.UserId == ""
+}
+
 func sendVerificationMail(user User) {
   mail([]string{user.EmailId}, renderMail("verification", map[string]interface{} {
     "From": "vimqmail+noreply@gmail.com",

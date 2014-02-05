@@ -9,6 +9,7 @@ import (
   "strconv"
   "strings"
   "github.com/gorilla/sessions"
+  "encoding/json"
 )
 
 var (
@@ -49,7 +50,6 @@ type editQuestionData struct {
 
 /*
    TODOs:
-   * ajax posts
    * server validation
    * implement returnto for request that will redirect
    * Discussion on question
@@ -80,6 +80,7 @@ func main() {
   web.Get("/question/(.*)/edit/",editQuestionHandlerGen(false))
   web.Get("/question/(.*)/", questionHandler)
   web.Get("/emailverification/(.*)/(.*)", verificationHandler)
+  web.Get("/checkusernameavailability/(.*)", availabilityHandler)
 
 	web.Get("/quiz/()", questionHandler)
 
@@ -153,6 +154,15 @@ func getNotifications(ctx *web.Context) map[string][]string {
   }
   session.Save(ctx.Request, ctx)
   logger.Println(fmt.Sprintf("%+v", ret))
+  return ret
+}
+
+func availabilityHandler(ctx *web.Context, username string) []byte {
+  ret, _ := json.Marshal(map[string]interface{} {
+    "username": username,
+    "availability": checkUserNameAvailability(username, getNotifier(ctx)),
+    "alerts": getNotifications(ctx),
+  })
   return ret
 }
 
@@ -246,6 +256,11 @@ func logoutHandler(ctx *web.Context) {
 }
 
 func signupSubmitHandler(ctx *web.Context) {
+  if !checkUserNameAvailability(ctx.Params["username"], getNotifier(ctx)) {
+    getNotifier(ctx)("info", "Username already registered")
+    simplePageHandler("signup")(ctx)
+    return
+  }
   user := User {
     UserId: GetNextId("user"),
     UserName: ctx.Params["username"],
