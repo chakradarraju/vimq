@@ -3,6 +3,9 @@ package main
 import (
   "labix.org/v2/mgo"
   "labix.org/v2/mgo/bson"
+  "crypto/hmac"
+  "crypto/sha1"
+  "fmt"
 )
 
 type User struct {
@@ -11,6 +14,7 @@ type User struct {
   PassWord string
   UserLevel string
   EmailId string
+  EmailVerified string
   DisplayName string
   AddedQuestionIds []string
 }
@@ -102,7 +106,37 @@ func SignUp(user User, notify func(string,string)) User {
     notify("danger", "Internal error in creating user, try again later")
     return user
   }
+  sendVerificationMail(user)
+  notify("info", "Verification mail has been sent, please verify your email id")
   return user
+}
+
+func sendVerificationMail(user User) {
+  mail([]string{user.EmailId}, renderMail("verification", map[string]interface{} {
+    "From": "vimqmail+noreply@gmail.com",
+    "To": user.EmailId,
+    "Subject": "Email Verification from VimQ",
+    "VerificationLink": getBaseUrl() + "/emailverification/" + user.UserId + "/" + getUserHash(user.UserId, user.EmailId),
+  }))
+}
+
+func getUserHash(userId string, emailId string) string {
+  hm := hmac.New(sha1.New, []byte(getenv("COOKIESECRET")))
+
+  hm.Write([]byte(userId))
+  hm.Write([]byte(emailId))
+  return fmt.Sprintf("%02x", hm.Sum(nil))
+}
+
+func verifyUser(userId string, hash string, notify func(string,string)) {
+  user := GetUserFromId(userId, notify)
+  if getUserHash(userId, user.EmailId) == hash {
+    user.EmailVerified = user.EmailId
+    user.Save()
+    notify("info", "Your email id is verified")
+  } else {
+    notify("danger", "Hash doesn't seem to match")
+  }
 }
 
 func GetUsersCollection(db string) *mgo.Collection {

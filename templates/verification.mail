@@ -1,0 +1,7 @@
+From: {{ .From }}
+To: {{ .To }}
+Subject: {{ .Subject }}
+
+Click on below link to verify your account:
+
+{{ .VerificationLink }}

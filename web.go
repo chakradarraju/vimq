@@ -52,7 +52,6 @@ type editQuestionData struct {
    * ajax posts
    * server validation
    * implement returnto for request that will redirect
-   * Email verification
    * Discussion on question
    * Collect stats for questions and users => and grade question and users to show question of relevant difficulty to every user
 */
@@ -65,13 +64,22 @@ func main() {
   // Handlers
   web.Get("/", func(ctx *web.Context) { ctx.Redirect(301, "/home/") })
   web.Get("/home/", simplePageHandler("home"))
-  web.Get("/login/", simplePageHandler("login"))
+  web.Get("/login/", simplePageHandler("login", func(ctx *web.Context) bool {
+    user := getLoggedInUser(ctx)
+    if user.UserId != "" {
+      getNotifier(ctx)("info", "User already logged in as " + user.DisplayName)
+      ctx.Redirect(301, "/home/")
+      return true
+    }
+    return false
+  }))
   web.Get("/signup/", simplePageHandler("signup"))
   web.Get("/addquestion/()", editQuestionHandlerGen(false))
   web.Get("/myprofile/()", profileHandler)
   web.Get("/profile/(.*)/", profileHandler)
   web.Get("/question/(.*)/edit/",editQuestionHandlerGen(false))
   web.Get("/question/(.*)/", questionHandler)
+  web.Get("/emailverification/(.*)/(.*)", verificationHandler)
 
 	web.Get("/quiz/()", questionHandler)
 
@@ -95,8 +103,18 @@ func main() {
   }()
 
   // Starting webserver
-	location := fmt.Sprintf("%s:%s", getenv("HOST"), getenv("PORT"))
-  web.Run(location)
+  web.Run(getHostPort())
+}
+
+func getBaseUrl() string {
+  return "http://" + getHostPort()
+}
+
+func getHostPort() string {
+  if getenv("PORT") == "80" {
+    return getenv("HOST")
+  }
+  return fmt.Sprintf("%s:%s", getenv("HOST"), getenv("PORT"))
 }
 
 func isActiveTab(base string, ctx *web.Context) bool {
@@ -134,11 +152,22 @@ func getNotifications(ctx *web.Context) map[string][]string {
     session.Values[k] = []string{}
   }
   session.Save(ctx.Request, ctx)
+  logger.Println(fmt.Sprintf("%+v", ret))
   return ret
 }
 
-func simplePageHandler(page string) func(*web.Context) {
+func verificationHandler(ctx *web.Context, userId string, hash string) {
+  verifyUser(userId, hash, getNotifier(ctx))
+  Render("mailverified", templateData{Context: ctx, Alerts: getNotifications(ctx)}, ctx, ctx.Params["refresh"] != "")
+}
+
+func simplePageHandler(page string, modifiers ...func(*web.Context) bool) func(*web.Context) {
   return func(ctx *web.Context) {
+    for _, fn := range modifiers {
+      if fn(ctx) {
+        return
+      }
+    }
     user := getLoggedInUser(ctx)
     Render(page, templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, ctx, ctx.Params["refresh"] != "")
   }
@@ -208,6 +237,10 @@ func loginSubmitHandler(ctx *web.Context) {
 }
 
 func logoutHandler(ctx *web.Context) {
+  user := getLoggedInUser(ctx)
+  if user.UserId == "" {
+    getNotifier(ctx)("danger", "User not logged in to logout")
+  }
   setSecureCookie(ctx, "userid", "", -1) // Deleting cookie
   ctx.Redirect(301, "/home/")
 }
@@ -226,7 +259,6 @@ func signupSubmitHandler(ctx *web.Context) {
     simplePageHandler("signup")(ctx)
     return
   }
-  setSecureCookie(ctx, "userid", user.UserId, 0)
   ctx.Redirect(301, "/home/")
 }
 
