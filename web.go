@@ -8,9 +8,9 @@ import (
 
 /*
    TODOs:
+   * Profile pic
    * Send verification mail again
    * Edit profile
-   * Added user mention
    * Home page flowchart
    * server validation
    * implement returnto for request that will redirect
@@ -38,7 +38,7 @@ func main() {
   web.Get("/signup/", simplePageHandler("signup"))
   web.Get("/addquestion/()", editQuestionHandlerGen(false))
   web.Get("/myprofile/()", profileHandler)
-  web.Get("/profile/(.*)/", profileHandler)
+  web.Get("/user/(.*)/", profileHandler)
   web.Get("/question/(.*)/edit/",editQuestionHandlerGen(false))
   web.Get("/question/(.*)/", questionHandler)
   web.Get("/emailverification/(.*)/(.*)", verificationHandler)

@@ -30,7 +30,7 @@ func getRandomQuestion() Question {
 func AddQuestion(question Question, notify func(string,string)) {
   err := qCollection.Insert(&question)
   if err == nil {
-    user := GetUserFromId(question.AddedUserId, notify)
+    user := getUserFromId(question.AddedUserId, notify)
     user.NewAddedQuestionId(question.QuestionId)
     user.Save()
     logger.Println("Added notification")
@@ -73,7 +73,7 @@ func (q *Question) Save() {
 func deleteQuestion(id string, notify func(string,string)) {
   question := getQuestionFromId(id, notify)
   if err := qCollection.Remove(bson.M{"questionid":id}); err == nil {
-    user := GetUserFromId(question.AddedUserId, notify)
+    user := getUserFromId(question.AddedUserId, notify)
     user.RemoveQuestionId(id)
     user.Save()
     notify("info", "Question removed successfully")

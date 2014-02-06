@@ -28,7 +28,7 @@ func getLoggedInUser(ctx *web.Context) User {
   if userid == "" {
     return User{}
   }
-  return GetUserFromId(userid, getNotifier(ctx))
+  return getUserFromId(userid, getNotifier(ctx))
 }
 
 func getNotifier(ctx *web.Context) func(string,string) {

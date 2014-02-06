@@ -50,7 +50,7 @@ func profileHandler(ctx *web.Context, userId string) {
       return
     }
   } else {
-    user = GetUserFromUserName(userId, getNotifier(ctx))
+    user = getUserFromUserName(userId, getNotifier(ctx))
   }
   addedQuestions := getQuestionsFromId(user.AddedQuestionIds, getNotifier(ctx))
   renderView(ctx, "profile", data {
@@ -109,11 +109,13 @@ func questionHandler(ctx *web.Context, questionId string) {
   } else {
     question = getRandomQuestion()
   }
+  addedUser := getUserFromId(question.AddedUserId, getNotifier(ctx))
   renderView(ctx, "question", data {
     "User": user,
     "Context": ctx,
     "Alerts": getNotifications(ctx),
     "Question": question,
+    "AddedUser": addedUser,
   })
 }
 

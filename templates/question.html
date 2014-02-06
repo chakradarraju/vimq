@@ -1,5 +1,7 @@
 {{ define "content" }}
-  <span class="text"> {{ .Question.Question }} </span><br/>
+  <span class="text"> {{ .Question.Question }} </span>
+  <span class="text pull-right"> Added by: <a href='/user/{{ .AddedUser.UserName }}/'>{{ .AddedUser.DisplayName }}</a></span>
+  <br/>
   <div id="explanation" class="panel panel-default">
     <div class="panel-heading"><h3 class="panel-title">Explanation</h3></div>
     <div class="panel-body">

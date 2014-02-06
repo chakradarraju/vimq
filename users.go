@@ -45,7 +45,7 @@ func (u *User) Save() {
   uCollection.Update(bson.M{"userid":u.UserId}, &u)
 }
 
-func GetUserFromBson(query bson.M, notify func(string,string)) User {
+func getUserFromBson(query bson.M, notify func(string,string)) User {
   users := []User{}
   err := uCollection.Find(query).All(&users)
   if err != nil {
@@ -54,12 +54,12 @@ func GetUserFromBson(query bson.M, notify func(string,string)) User {
   return getUserOrError(users, notify)
 }
 
-func GetUserFromUserName(username string, notify func(string,string)) User {
-  return GetUserFromBson(bson.M{"username":username}, notify)
+func getUserFromUserName(username string, notify func(string,string)) User {
+  return getUserFromBson(bson.M{"username":username}, notify)
 }
 
-func GetUserFromId(userid string, notify func(string,string)) User {
-  return GetUserFromBson(bson.M{"userid":userid}, notify)
+func getUserFromId(userid string, notify func(string,string)) User {
+  return getUserFromBson(bson.M{"userid":userid}, notify)
 }
 
 func getUserOrError(users []User, notify func(string,string)) User {
@@ -112,7 +112,7 @@ func SignUp(user User, notify func(string,string)) User {
 }
 
 func checkUserNameAvailability(username string, notify func(string,string)) bool {
-  user := GetUserFromUserName(username, func(a string, b string) {})
+  user := getUserFromUserName(username, func(a string, b string) {})
   return user.UserId == ""
 }
 
@@ -134,7 +134,7 @@ func getUserHash(userId string, emailId string) string {
 }
 
 func verifyUser(userId string, hash string, notify func(string,string)) {
-  user := GetUserFromId(userId, notify)
+  user := getUserFromId(userId, notify)
   if getUserHash(userId, user.EmailId) == hash {
     user.EmailVerified = user.EmailId
     user.Save()
