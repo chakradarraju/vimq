@@ -44,6 +44,11 @@ func profileHandler(ctx *web.Context, userId string) {
   var user User
   if len(userId) == 0 {
     user = loggedInUser
+    if user.UserId == "" {
+      getNotifier(ctx)("info", "You must be logged in to view your profile")
+      ctx.Redirect(301, "/home/")
+      return
+    }
   } else {
     user = GetUserFromUserName(userId, getNotifier(ctx))
   }

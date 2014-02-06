@@ -3,7 +3,6 @@ package main
 import (
   "github.com/hoisie/web"
   "encoding/json"
-  "fmt"
   "os"
   "strings"
   "strconv"
@@ -48,10 +47,9 @@ func getNotifications(ctx *web.Context) map[string][]string {
   ret := map[string][]string{}
   for k, v := range session.Values {
     ret[k.(string)] = v.([]string)
-    session.Values[k] = []string{}
+    delete(session.Values, k)
   }
   session.Save(ctx.Request, ctx)
-  logger.Println(fmt.Sprintf("%+v", ret))
   return ret
 }
 
