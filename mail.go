@@ -15,17 +15,6 @@ var (
   auth smtp.Auth = smtp.PlainAuth("", username, password, server)
 )
 
-type mailData struct {
-  From string
-  To string
-  Subject string
-}
-
-type verificationMailData struct {
-  mailData
-  VerificationLink string
-}
-
 func renderMail(tmpl string, data interface{}) []byte {
   t, _ := template.ParseFiles("templates/" + tmpl + ".mail")
   var ret bytes.Buffer

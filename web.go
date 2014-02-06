@@ -17,39 +17,14 @@ var (
   logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 )
 
-type templateData struct {
-  User User
-  PageTitle string
-  Context *web.Context
-  Alerts map[string][]string
-}
-
-type homeData struct {
-  templateData
-}
-
-type questionData struct {
-  Question Question
-  templateData
-}
-
-type loginData struct {
-  templateData
-}
-
-type profileData struct {
-  templateData
-  Profile User
-  AddedQuestions []Question
-}
-
-type editQuestionData struct {
-  templateData
-  Question Question
-}
+type data map[string]interface{}
 
 /*
    TODOs:
+   * Send verification mail again
+   * Edit profile
+   * Added user mention
+   * Home page flowchart
    * server validation
    * implement returnto for request that will redirect
    * Discussion on question
@@ -168,7 +143,10 @@ func availabilityHandler(ctx *web.Context, username string) []byte {
 
 func verificationHandler(ctx *web.Context, userId string, hash string) {
   verifyUser(userId, hash, getNotifier(ctx))
-  Render("mailverified", templateData{Context: ctx, Alerts: getNotifications(ctx)}, ctx, ctx.Params["refresh"] != "")
+  Render("mailverified", data {
+    "Context": ctx,
+    "Alerts": getNotifications(ctx),
+  }, ctx, ctx.Params["refresh"] != "")
 }
 
 func simplePageHandler(page string, modifiers ...func(*web.Context) bool) func(*web.Context) {
@@ -179,7 +157,11 @@ func simplePageHandler(page string, modifiers ...func(*web.Context) bool) func(*
       }
     }
     user := getLoggedInUser(ctx)
-    Render(page, templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, ctx, ctx.Params["refresh"] != "")
+    Render(page, data {
+      "User": user,
+      "Context": ctx,
+      "Alerts": getNotifications(ctx),
+    }, ctx, ctx.Params["refresh"] != "")
   }
 }
 
@@ -192,7 +174,13 @@ func profileHandler(ctx *web.Context, userId string) {
     user = GetUserFromUserName(userId, getNotifier(ctx))
   }
   addedQuestions := getQuestionsFromId(user.AddedQuestionIds, getNotifier(ctx))
-  Render("profile", profileData{templateData:templateData{User: loggedInUser, Context: ctx, Alerts: getNotifications(ctx)}, Profile: user, AddedQuestions: addedQuestions}, ctx, ctx.Params["refresh"] != "")
+  Render("profile", data {
+    "User": loggedInUser, 
+    "Context": ctx,
+    "Alerts": getNotifications(ctx),
+    "Profile": user,
+    "AddedQuestions": addedQuestions,
+  }, ctx, ctx.Params["refresh"] != "")
 }
 
 func editQuestionHandlerGen(save bool) func(*web.Context, string) {
@@ -203,7 +191,11 @@ func editQuestionHandlerGen(save bool) func(*web.Context, string) {
       question = getQuestionFromId(questionId, getNotifier(ctx))
       if question.AddedUserId != user.UserId {
         getNotifier(ctx)("danger", "Question was added by differentuser, you can't edit it.")
-        Render("empty", templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, ctx, ctx.Params["refresh"] != "")
+        Render("empty", data {
+          "User": user,
+          "Context": ctx,
+          "Alerts": getNotifications(ctx),
+        }, ctx, ctx.Params["refresh"] != "")
         return
       }
       if save {
@@ -216,7 +208,12 @@ func editQuestionHandlerGen(save bool) func(*web.Context, string) {
         getNotifier(ctx)("success", "Question saved successfully")
       }
     }
-    Render("editquestion", editQuestionData{templateData:templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, Question: question}, ctx, ctx.Params["refresh"] != "")
+    Render("editquestion", data {
+      "User": user,
+      "Context": ctx,
+      "Alerts": getNotifications(ctx),
+      "Question": question,
+    }, ctx, ctx.Params["refresh"] != "")
   }
 }
 
@@ -233,7 +230,12 @@ func questionHandler(ctx *web.Context, questionId string) {
   } else {
     question = getRandomQuestion()
   }
-  Render("question", questionData{templateData:templateData{User: user, Context: ctx, Alerts: getNotifications(ctx)}, Question:question}, ctx, ctx.Params["refresh"] != "")
+  Render("question", data {
+    "User": user,
+    "Context": ctx,
+    "Alerts": getNotifications(ctx),
+    "Question": question,
+  }, ctx, ctx.Params["refresh"] != "")
 }
 
 func loginSubmitHandler(ctx *web.Context) {
