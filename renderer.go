@@ -1,7 +1,6 @@
 package main
 
 import (
-  "net/http"
   "html/template"
   "github.com/hoisie/web"
   "strings"
@@ -12,12 +11,15 @@ var (
   cache = map[string]*template.Template{}
 )
 
-func Render(page string, data interface{}, res http.ResponseWriter, refresh bool) {
-  _, found := cache[page]
-  if !found || refresh {
-    cache[page] = parseTemplate(page)
+func loadView(view string) {
+  cache[view] = parseTemplate(view)
+}
+
+func renderView(ctx *web.Context, template string, data interface{}) {
+  if _, found := cache[template]; !found || ctx.Params["refresh"] != "" {
+    loadView(template)
   }
-  cache[page].Execute(res, data)
+  cache[template].Execute(ctx, data)
 }
 
 func parseTemplate(file string) *template.Template {

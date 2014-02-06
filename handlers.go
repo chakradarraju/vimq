@@ -17,10 +17,10 @@ func availabilityHandler(ctx *web.Context, username string) []byte {
 
 func verificationHandler(ctx *web.Context, userId string, hash string) {
   verifyUser(userId, hash, getNotifier(ctx))
-  Render("mailverified", data {
+  renderView(ctx, "mailverified", data {
     "Context": ctx,
     "Alerts": getNotifications(ctx),
-  }, ctx, ctx.Params["refresh"] != "")
+  })
 }
 
 func simplePageHandler(page string, modifiers ...func(*web.Context) bool) func(*web.Context) {
@@ -31,11 +31,11 @@ func simplePageHandler(page string, modifiers ...func(*web.Context) bool) func(*
       }
     }
     user := getLoggedInUser(ctx)
-    Render(page, data {
+    renderView(ctx, page, data {
       "User": user,
       "Context": ctx,
       "Alerts": getNotifications(ctx),
-    }, ctx, ctx.Params["refresh"] != "")
+    })
   }
 }
 
@@ -48,13 +48,13 @@ func profileHandler(ctx *web.Context, userId string) {
     user = GetUserFromUserName(userId, getNotifier(ctx))
   }
   addedQuestions := getQuestionsFromId(user.AddedQuestionIds, getNotifier(ctx))
-  Render("profile", data {
+  renderView(ctx, "profile", data {
     "User": loggedInUser, 
     "Context": ctx,
     "Alerts": getNotifications(ctx),
     "Profile": user,
     "AddedQuestions": addedQuestions,
-  }, ctx, ctx.Params["refresh"] != "")
+  })
 }
 
 func editQuestionHandlerGen(save bool) func(*web.Context, string) {
@@ -65,11 +65,11 @@ func editQuestionHandlerGen(save bool) func(*web.Context, string) {
       question = getQuestionFromId(questionId, getNotifier(ctx))
       if question.AddedUserId != user.UserId {
         getNotifier(ctx)("danger", "Question was added by differentuser, you can't edit it.")
-        Render("empty", data {
+        renderView(ctx, "empty", data {
           "User": user,
           "Context": ctx,
           "Alerts": getNotifications(ctx),
-        }, ctx, ctx.Params["refresh"] != "")
+        })
         return
       }
       if save {
@@ -82,12 +82,12 @@ func editQuestionHandlerGen(save bool) func(*web.Context, string) {
         getNotifier(ctx)("success", "Question saved successfully")
       }
     }
-    Render("editquestion", data {
+    renderView(ctx, "editquestion", data {
       "User": user,
       "Context": ctx,
       "Alerts": getNotifications(ctx),
       "Question": question,
-    }, ctx, ctx.Params["refresh"] != "")
+    })
   }
 }
 
@@ -104,12 +104,12 @@ func questionHandler(ctx *web.Context, questionId string) {
   } else {
     question = getRandomQuestion()
   }
-  Render("question", data {
+  renderView(ctx, "question", data {
     "User": user,
     "Context": ctx,
     "Alerts": getNotifications(ctx),
     "Question": question,
-  }, ctx, ctx.Params["refresh"] != "")
+  })
 }
 
 func loginSubmitHandler(ctx *web.Context) {
