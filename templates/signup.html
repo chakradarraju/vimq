@@ -30,12 +30,7 @@
     var btn = $("#availabilityBtn");
     btn.attr("disabled", true);
     $.get("/checkusernameavailability/"+$("input[name='username']").val(), {}, function(data) {
-      var alertContainer = $("#alertContainer");
-      $(data.alerts).each(function(type, alerts) {
-        $(alerts).each(function(i, alert) {
-          $("<div></div>").addClass("alert alert-"+type).html(alert).appendTo(alertContainer);
-        });
-      });
+      showAlerts(data.alerts);
       if (data.username == $("input[name='username']").val()) {
         btn.removeClass("btn-default").addClass(data.availability ? "btn-success" : "btn-danger");
         $("span", btn).removeClass("glyphicon-search").addClass(data.availability ? "glyphicon-ok" : "glyphicon-remove");

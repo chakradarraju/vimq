@@ -23,6 +23,27 @@
         font-size: 21px;
         line-height: 2;
       }
+
+      #content .text.small {
+        font-size: 12px;
+      }
+
+      #content .text.tiny {
+        font-size: 13px;
+      }
+
+      #content .parenthover {
+        display: none;
+      }
+
+      #content *:hover > .parenthover {
+        display: inline;
+      }
+
+      #content .inlinebox {
+        border: 0;
+        outline: 0;
+      }
     </style>
     {{ template "css" . }}
   </head>
@@ -40,16 +61,13 @@
     <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
     {{ template "js" . }}
     <script type="text/javascript">
-      $(["info","danger","warning"]).each(function(i, type) {
-        var cookie = $.cookie(type);
-        if(cookie && cookie.length > 0) {
-          cookie = decodeURIComponent(cookie);
-          $(cookie.replace(/\+/g," ").split(";")).each(function(i, alert) {
-            $("<div>").addClass("alert alert-"+type).html(alert).appendTo("#alerts");
+      function showAlerts(alerts) {
+        $(["info","warning","danger"]).each(function(i, type) {
+          $(alerts[type]).each(function(i, alert) {
+            $("<div></div>").addClass("alert alert-"+type).html(alert).appendTo("#alerts");
           });
-          $.removeCookie(type, {path:"/"});
-        }
-      });
+        });
+      }
     </script>
   </body>
 </html>

@@ -16,13 +16,25 @@
     {{ if .Profile.DisplayName }}
     <div class="row">
       <div class="col-md-4 text text-right">Display Name:</div>
-      <div class="col-md-8 text">{{ .Profile.DisplayName }}</div>
+      <div class="col-md-8 text" id="displayName">
+        <div class="clicktochange toggle">
+          <span id="displaynamespan">{{ .Profile.DisplayName }}</span>
+          <span class="text tiny parenthover">Click to change</span>
+        </div>
+        <input class="changetosave toggle inlinebox" id="displayname" value="{{ .Profile.DisplayName }}" />
+      </div>
     </div>
     {{ end }}
     {{ if .Profile.EmailId }}
     <div class="row">
       <div class="col-md-4 text text-right">Email-id:</div>
-      <div class="col-md-8 text">{{ .Profile.EmailId }}</div>
+      <div class="col-md-8 text" id="emailidtext">
+        <div class="clicktochange toggle">
+          <span id="emailidspan">{{ .Profile.EmailId }}</span>
+          <span class="text tiny parenthover">Click to change</span>
+        </div>
+        <input class="changetosave toggle inlinebox" id="emailid" value="{{ .Profile.EmailId }}" />
+      </div>
     </div>
     {{ end }}
     {{ if len .AddedQuestions }}
@@ -59,5 +71,43 @@
   function confirmDelete(question) {
     return confirm("Are you sure you want to delete '" + question + "'?");
   }
+
+  function toggleChildren(node) {
+    $(".toggle", node).toggle();
+  }
+
+  $(".clicktochange").click(function(e) {
+    toggleChildren(this.parentNode);
+    $("input", this.parentNode).focus();
+  });
+
+  $(".changetosave").blur(function(e) {
+    if ($("#"+this.id+"span").html() == this.value) {
+      toggleChildren(this.parentNode);
+      return;
+    }
+    var textBox = this;
+    $.post("/editprofile/"+this.id+"/", {value:this.value}, function(data) {
+      showAlerts(data.alerts);
+      if (data.success) {
+        toggleChildren(textBox.parentNode);
+        $("#"+textBox.id+"span").html(data.value);
+      }
+    }, "json")
+  });
+
+  $(".changetosave").keypress(function(e) {
+    if (e.keyCode == 13) {
+      this.blur();
+    }
+  });
 </script>
+{{ end }}
+
+{{ define "css" }}
+  <style type="text/css" media="screen">
+    .changetosave {
+      display: none;
+    }
+  </style>
 {{ end }}

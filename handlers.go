@@ -18,6 +18,7 @@ func availabilityHandler(ctx *web.Context, username string) []byte {
 func verificationHandler(ctx *web.Context, userId string, hash string) {
   verifyUser(userId, hash, getNotifier(ctx))
   renderView(ctx, "mailverified", data {
+    "User": getLoggedInUser(ctx),
     "Context": ctx,
     "Alerts": getNotifications(ctx),
   })
@@ -177,4 +178,23 @@ func addQuestionSubmitHandler(ctx *web.Context) {
     return
   }
   simplePageHandler("editquestion")(ctx)
+}
+
+func editprofileHandler(ctx *web.Context, field string) []byte {
+  user := getLoggedInUser(ctx)
+  success := true
+  value := ctx.Params["value"]
+  switch field {
+    case "emailid": success = user.SetEmail(value, getNotifier(ctx))
+    case "displayname": success = user.SetDisplayName(value, getNotifier(ctx))
+    case "default":
+      getNotifier(ctx)("danger", "Unexpected data sent")
+      success = false
+  }
+  ret, _ := encodeJson(data {
+    "success": success,
+    "value": value,
+    "alerts": getNotifications(ctx),
+  })
+  return ret
 }

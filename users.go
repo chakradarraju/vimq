@@ -6,6 +6,7 @@ import (
   "crypto/hmac"
   "crypto/sha1"
   "fmt"
+  "regexp"
 )
 
 type User struct {
@@ -22,6 +23,27 @@ type User struct {
 var (
   uCollection *mgo.Collection = GetUsersCollection(getenv("DB"))
 )
+
+func (u *User) SetEmail(email string, notify func(string,string)) bool {
+  if match, _ := regexp.MatchString("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", email); match {
+    u.EmailId = email
+    u.Save()
+    sendVerificationMail(*u)
+    return true
+  }
+  notify("warning", "Please check your email id, we suspect it is invalid.");
+  return false
+}
+
+func (u *User) SetDisplayName(displayname string, notify func(string,string)) bool {
+  if match, _ := regexp.MatchString("^.{6,64}$", displayname); match {
+    u.DisplayName = displayname
+    u.Save()
+    return true
+  }
+  notify("warning", "Display name should be at least 6, at most 64 characters")
+  return false
+}
 
 func (u *User) RemoveQuestionId(questionId string) {
   pos := -1

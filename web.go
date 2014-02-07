@@ -53,6 +53,7 @@ func main() {
   web.Post("/addquestion/", addQuestionSubmitHandler)
   web.Post("/question/(.*)/edit/", editQuestionHandlerGen(true))
   web.Post("/question/(.*)/delete/", deleteQuestionHandler)
+  web.Post("/editprofile/(.*)/", editprofileHandler)
 
   // Hooks to close db connections
   c := make(chan os.Signal, 1)
