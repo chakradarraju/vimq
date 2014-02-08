@@ -1,7 +1,9 @@
 {{ define "pagetitle" }} VimQ user - {{ .Profile.UserName }} {{ end }}
 
 {{ define "content" }}
+{{ if shouldShowEditOptions .Profile .User }}
 <button class="btn btn-success pull-right" id="saveBtn"><span class="glyphicon glyphicon-floppy-disk"></span>Save</button>
+{{ end }}
 <h3>VimQ User profile</h3>
 <div class="row">
   <div class="col-md-4">
@@ -20,7 +22,9 @@
       <div class="col-md-8 text" id="displayName">
         <div class="clicktochange toggle">
           <span id="displaynamespan">{{ .Profile.DisplayName }}</span>
+{{ if shouldShowEditOptions .Profile .User }}
           <span class="text tiny parenthover">Click to change</span>
+{{ end }}
         </div>
         <input class="changetosave toggle inlinebox" id="displayname" value="{{ .Profile.DisplayName }}" />
       </div>
@@ -32,7 +36,9 @@
       <div class="col-md-8 text" id="emailidtext">
         <div class="clicktochange toggle">
           <span id="emailidspan">{{ .Profile.EmailId }}</span>
+{{ if shouldShowEditOptions .Profile .User }}
           <span class="text tiny parenthover">Click to change</span>
+{{ end }}
         </div>
         <input class="changetosave toggle inlinebox" id="emailid" value="{{ .Profile.EmailId }}" />
       </div>
@@ -68,6 +74,7 @@
 {{ end }}
 
 {{ define "js" }}
+{{ if shouldShowEditOptions .Profile .User }}
 <script type="text/javascript" charset="utf-8">
   var changes = {};
   $("#saveBtn").hide();
@@ -111,6 +118,7 @@
     }
   });
 </script>
+{{ end }}
 {{ end }}
 
 {{ define "css" }}
