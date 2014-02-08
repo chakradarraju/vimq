@@ -27,7 +27,6 @@ var (
 func (u *User) SetEmail(email string, notify func(string,string)) bool {
   if match, _ := regexp.MatchString("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", email); match {
     u.EmailId = email
-    u.Save()
     sendVerificationMail(*u)
     return true
   }
@@ -38,7 +37,6 @@ func (u *User) SetEmail(email string, notify func(string,string)) bool {
 func (u *User) SetDisplayName(displayname string, notify func(string,string)) bool {
   if match, _ := regexp.MatchString("^.{6,64}$", displayname); match {
     u.DisplayName = displayname
-    u.Save()
     return true
   }
   notify("warning", "Display name should be at least 6, at most 64 characters")
@@ -139,6 +137,9 @@ func checkUserNameAvailability(username string, notify func(string,string)) bool
 }
 
 func sendVerificationMail(user User) {
+  if user.EmailId == user.EmailVerified {
+    return
+  }
   mail([]string{user.EmailId}, renderMail("verification", map[string]interface{} {
     "From": "vimqmail+noreply@gmail.com",
     "To": user.EmailId,

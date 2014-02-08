@@ -1,6 +1,7 @@
 {{ define "pagetitle" }} VimQ user - {{ .Profile.UserName }} {{ end }}
 
 {{ define "content" }}
+<button class="btn btn-success pull-right" id="saveBtn"><span class="glyphicon glyphicon-floppy-disk"></span>Save</button>
 <h3>VimQ User profile</h3>
 <div class="row">
   <div class="col-md-4">
@@ -68,6 +69,8 @@
 
 {{ define "js" }}
 <script type="text/javascript" charset="utf-8">
+  var changes = {};
+  $("#saveBtn").hide();
   function confirmDelete(question) {
     return confirm("Are you sure you want to delete '" + question + "'?");
   }
@@ -86,14 +89,20 @@
       toggleChildren(this.parentNode);
       return;
     }
-    var textBox = this;
-    $.post("/editprofile/"+this.id+"/", {value:this.value}, function(data) {
+    changes[this.id] = this.value;
+    $("#saveBtn").show();
+    $("#"+this.id+"span").html(this.value);
+    toggleChildren(this.parentNode);
+  });
+
+  $("#saveBtn").click(function(e) {
+    $.post("/editprofile/", changes, function(data) {
       showAlerts(data.alerts);
       if (data.success) {
-        toggleChildren(textBox.parentNode);
-        $("#"+textBox.id+"span").html(data.value);
+        $("#saveBtn").hide();
       }
-    }, "json")
+      changes = {}
+    }, "json");
   });
 
   $(".changetosave").keypress(function(e) {

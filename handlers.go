@@ -180,20 +180,27 @@ func addQuestionSubmitHandler(ctx *web.Context) {
   simplePageHandler("editquestion")(ctx)
 }
 
-func editprofileHandler(ctx *web.Context, field string) []byte {
+func editprofileHandler(ctx *web.Context, fields ...string) []byte {
   user := getLoggedInUser(ctx)
   success := true
-  value := ctx.Params["value"]
-  switch field {
-    case "emailid": success = user.SetEmail(value, getNotifier(ctx))
-    case "displayname": success = user.SetDisplayName(value, getNotifier(ctx))
-    case "default":
-      getNotifier(ctx)("danger", "Unexpected data sent")
-      success = false
+  notify := getNotifier(ctx)
+  if len(fields) == 0 {
+    fields = []string{"emailid", "displayname"}
   }
+  for _, field := range fields {
+    if value, found := ctx.Params[field]; found {
+      switch field {
+        case "emailid": success = user.SetEmail(value, notify)
+        case "displayname": success = user.SetDisplayName(value, notify)
+        case "default":
+          notify("danger", "Unknown field")
+          success = false
+      }
+    }
+  }
+  user.Save()
   ret, _ := encodeJson(data {
     "success": success,
-    "value": value,
     "alerts": getNotifications(ctx),
   })
   return ret
