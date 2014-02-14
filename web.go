@@ -8,7 +8,6 @@ import (
 
 /*
    TODOs:
-   * Send verification mail again
    * Home page flowchart
    * server validation
    * implement returnto for request that will redirect
@@ -53,6 +52,7 @@ func main() {
   web.Post("/question/(.*)/delete/", deleteQuestionHandler)
   web.Post("/editprofile/", editprofileHandler)
   web.Post("/editprofile/(.*)/", editprofileHandler)
+  web.Post("/sendverification/", sendverificationHandler)
 
   // Hooks to close db connections
   c := make(chan os.Signal, 1)

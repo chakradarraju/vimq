@@ -50,6 +50,9 @@ func parseTemplate(file string) *template.Template {
       hasher.Write([]byte(user.EmailVerified))
       return "http://www.gravatar.com/avatar/" + hex.EncodeToString(hasher.Sum(nil))
     },
+    "hasVerifiedEmail": func(user User) bool {
+      return user.EmailId == user.EmailVerified
+    },
   }
   t, err := template.New("base.html").Funcs(myfuncs).ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")
   if err != nil {

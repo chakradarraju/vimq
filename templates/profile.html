@@ -41,6 +41,13 @@
       <div class="col-md-4 text text-right">Email-id:</div>
       <div class="col-md-8 text" id="emailidtext">
         <div class="clicktochange toggle">
+          {{ if shouldShowEditOptions .Profile .User }}
+          {{ if hasVerifiedEmail .Profile }}
+          <span class="glyphicon glyphicon-ok" title="Email verified"></span>
+          {{ else }}
+          <span class="glyphicon glyphicon-envelope" id="sendVerificationEmail" title="Send verification email"></span>
+          {{ end }}
+          {{ end }}
           <span id="emailidspan">{{ .Profile.EmailId }}</span>
 {{ if shouldShowEditOptions .Profile .User }}
           <span class="text tiny parenthover">Click to change</span>
@@ -105,6 +112,8 @@
     changes[this.id] = this.value;
     $("#saveBtn").show();
     $("#"+this.id+"span").html(this.value);
+    $("#"+this.id+"span").addClass("modified");
+    $("#sendVerificationEmail").hide();
     toggleChildren(this.parentNode);
   });
 
@@ -113,8 +122,9 @@
       showAlerts(data.alerts);
       if (data.success) {
         $("#saveBtn").hide();
+        changes = {}
+        $(".modified").removeClass("modified");
       }
-      changes = {}
     }, "json");
   });
 
@@ -126,6 +136,18 @@
 
   $("#profilePicOverlay").click(function(e) {
     window.open('http://gravatar.com/', '_blank');
+  });
+
+  var sendVerificationEmail = function() {
+    $.post("/sendverification/", {}, function(data) {
+      alert(data.message);
+    }, "json");
+  };
+
+  $("#sendVerificationEmail").click(function(e) {
+    sendVerificationEmail();
+    $("#sendVerificationEmail").hide();
+    sendVerificationEmail = function() {};
   });
 </script>
 {{ end }}
@@ -146,6 +168,15 @@
       text-align: center;
       cursor: pointer;
       cursor: hand;
+    }
+
+    #sendVerificationEmail {
+      cursor: pointer;
+      cursor: hand;
+    }
+
+    .modified {
+      color: green;
     }
   </style>
 {{ end }}

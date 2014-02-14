@@ -205,3 +205,18 @@ func editprofileHandler(ctx *web.Context, fields ...string) []byte {
   })
   return ret
 }
+
+func sendverificationHandler(ctx *web.Context) []byte {
+  user := getLoggedInUser(ctx)
+  var message string
+  if user.EmailId != user.EmailVerified {
+    sendVerificationMail(user)
+    message = "Verification mail sent, check your " + user.EmailId + " inbox"
+  } else {
+    message = user.EmailId + " already verified"
+  }
+  ret, _ := encodeJson(data {
+    "message": message,
+  })
+  return ret
+}
