@@ -8,9 +8,7 @@ import (
 
 /*
    TODOs:
-   * Profile pic
    * Send verification mail again
-   * Edit profile
    * Home page flowchart
    * server validation
    * implement returnto for request that will redirect

@@ -5,6 +5,8 @@ import (
   "github.com/hoisie/web"
   "strings"
   "encoding/json"
+  "crypto/md5"
+  "encoding/hex"
 )
 
 var (
@@ -42,6 +44,11 @@ func parseTemplate(file string) *template.Template {
     },
     "shouldShowEditOptions": func(profile User, loggedIn User) bool {
       return profile.UserId == loggedIn.UserId
+    },
+    "gravatarUrl": func(user User) string {
+      hasher := md5.New()
+      hasher.Write([]byte(user.EmailVerified))
+      return "http://www.gravatar.com/avatar/" + hex.EncodeToString(hasher.Sum(nil))
     },
   }
   t, err := template.New("base.html").Funcs(myfuncs).ParseFiles("templates/base.html", "templates/" + file + ".html", "templates/header.html")

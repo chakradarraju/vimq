@@ -4,13 +4,19 @@
 {{ if shouldShowEditOptions .Profile .User }}
 <button class="btn btn-success pull-right" id="saveBtn"><span class="glyphicon glyphicon-floppy-disk"></span>Save</button>
 {{ end }}
-<h3>VimQ User profile</h3>
+<h3>VimQ User profile: 
+{{ if .Profile.UserName }}
+{{ .Profile.UserName }}
+{{ end }}
+</h3>
 <div class="row">
   <div class="col-md-4">
-    {{ if .Profile.UserName }}
-    <span class="text">{{ .Profile.UserName }}</span>
-    {{ end }}
-    <img src="/img/comingsoon.jpg" />
+    <div>
+    <div style="height:222px;width:222px;">
+      <img src="{{ gravatarUrl .Profile }}?s=222" style="position:absolute" />
+      <div class="parenthover" id="profilePicOverlay" style="line-height:222px;">Click to edit in Gravatar</div>
+    </div>
+    </div>
     {{ if .Profile.UserLevel }}
     <span class="text">Level: {{ .Profile.UserLevel }}</span>
     {{ end }}
@@ -117,6 +123,10 @@
       this.blur();
     }
   });
+
+  $("#profilePicOverlay").click(function(e) {
+    window.open('http://gravatar.com/', '_blank');
+  });
 </script>
 {{ end }}
 {{ end }}
@@ -125,6 +135,17 @@
   <style type="text/css" media="screen">
     .changetosave {
       display: none;
+    }
+  
+    #profilePicOverlay {
+      position: absolute;
+      width: 222px;
+      height: 222px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      text-align: center;
+      cursor: pointer;
+      cursor: hand;
     }
   </style>
 {{ end }}
